@@ -211,7 +211,7 @@ export default function StatsEntryForm({
             <Button
               type="button"
               variant="outline"
-              size="sm"
+              
               onClick={addPlayer}
               disabled={isSubmitting}
             >
@@ -233,7 +233,7 @@ export default function StatsEntryForm({
                       <Button
                         type="button"
                         variant="ghost"
-                        size="sm"
+                        
                         onClick={() => removePlayer(index)}
                         disabled={isSubmitting}
                       >
@@ -307,7 +307,6 @@ export default function StatsEntryForm({
                           {...register(`playerStats.${index}.atBats`, { valueAsNumber: true })}
                           type="number"
                           min="0"
-                          size="sm"
                           disabled={isSubmitting}
                         />
                       </div>

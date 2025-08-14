@@ -46,6 +46,7 @@ export interface Game {
   calendarEventId?: string;
   notes?: string;
   season?: Season;
+  playerStats?: PlayerGameStats[];
 }
 
 export interface PlayerGameStats {

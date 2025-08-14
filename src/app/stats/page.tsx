@@ -31,7 +31,8 @@ export default function StatsPage() {
   };
 
   const getScoreDisplay = (game: Game) => {
-    if (game.ourScore !== null && game.theirScore !== null) {
+    if (game.ourScore !== null && game.ourScore !== undefined && 
+        game.theirScore !== null && game.theirScore !== undefined) {
       const isWin = game.ourScore > game.theirScore;
       const isDraw = game.ourScore === game.theirScore;
       return {
