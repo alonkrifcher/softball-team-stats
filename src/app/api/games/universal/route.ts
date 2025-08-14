@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       const maxGameIdResult = await db.execute(sql`
         SELECT COALESCE(MAX(game_id), 0) as max_id FROM historical_games
       `);
-      const nextGameId = (maxGameIdResult[0]?.max_id || 0) + 1;
+      const nextGameId = Number(maxGameIdResult[0]?.max_id || 0) + 1;
 
       // Insert into historical_games
       await db.execute(sql`

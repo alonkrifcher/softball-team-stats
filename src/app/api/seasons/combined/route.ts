@@ -41,10 +41,10 @@ export async function GET() {
       id: row.id,
       name: row.name,
       year: row.year,
-      startDate: row.startDate ? new Date(row.startDate).toISOString() : null,
-      endDate: row.endDate ? new Date(row.endDate).toISOString() : null,
+      startDate: row.startDate ? new Date(String(row.startDate)).toISOString() : null,
+      endDate: row.endDate ? new Date(String(row.endDate)).toISOString() : null,
       isActive: Boolean(row.isActive),
-      createdAt: row.createdAt ? new Date(row.createdAt).toISOString() : null,
+      createdAt: row.createdAt ? new Date(String(row.createdAt)).toISOString() : null,
       source: 'current' as const,
       type: 'current' as const
     }));
@@ -64,8 +64,10 @@ export async function GET() {
     // Combine all seasons and sort by year (desc) then name
     const allSeasons = [...currentSeasons, ...historicalSeasons]
       .sort((a, b) => {
-        if (b.year !== a.year) return b.year - a.year;
-        return a.name.localeCompare(b.name);
+        const yearA = Number(a.year);
+        const yearB = Number(b.year);
+        if (yearB !== yearA) return yearB - yearA;
+        return String(a.name).localeCompare(String(b.name));
       });
 
     console.log(`✅ Found ${currentSeasons.length} current seasons and ${historicalSeasons.length} historical seasons`);
