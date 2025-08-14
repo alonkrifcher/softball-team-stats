@@ -4,6 +4,8 @@ import { sql } from 'drizzle-orm';
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('🔍 Fetching seasons from historical tables...');
+    
     const seasons = await db.execute(sql`
       SELECT 
         hs.year,
@@ -20,8 +22,13 @@ export async function GET(request: NextRequest) {
       ORDER BY hs.year DESC
     `);
 
+    console.log('📊 Raw seasons data:', seasons);
+    console.log('📊 Seasons count:', seasons.length);
+
     const result = seasons.map(season => {
       const s = season as any;
+      console.log('Processing season:', s);
+      
       const wins = parseInt(s.wins) || 0;
       const losses = parseInt(s.losses) || 0;
       const winLossRecord = wins > 0 || losses > 0 ? `${wins}-${losses}` : 'Unknown';
@@ -35,6 +42,7 @@ export async function GET(request: NextRequest) {
       };
     });
 
+    console.log('✅ Processed seasons result:', result);
     return NextResponse.json(result);
 
   } catch (error) {
