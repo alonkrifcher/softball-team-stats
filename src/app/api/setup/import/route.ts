@@ -36,34 +36,43 @@ interface GameInfoRow {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('📥 Starting Excel import process...');
+    
     // Security check: Only allow setup if no users exist
     const existingUsers = await db.query.users.findFirst();
     if (existingUsers) {
+      console.log('❌ Database already initialized');
       return NextResponse.json(
         { error: 'Database already initialized' },
         { status: 400 }
       );
     }
 
+    console.log('✅ Database not initialized, proceeding...');
+
     const formData = await request.formData();
     const file = formData.get('file') as File;
     
     if (!file) {
+      console.log('❌ No file uploaded');
       return NextResponse.json(
         { error: 'No file uploaded' },
         { status: 400 }
       );
     }
 
-    console.log('Processing Excel file:', file.name);
+    console.log('📊 Processing Excel file:', file.name, 'Size:', file.size, 'bytes');
     
     // Read the Excel file
+    console.log('📖 Reading Excel file...');
     const arrayBuffer = await file.arrayBuffer();
-    const workbook = XLSX.read(arrayBuffer);
+    console.log('✅ File read into buffer, size:', arrayBuffer.byteLength);
     
-    console.log('Sheet names:', workbook.SheetNames);
+    const workbook = XLSX.read(arrayBuffer);
+    console.log('📋 Sheet names:', workbook.SheetNames);
 
     // Step 1: Create admin and manager users
+    console.log('👤 Creating user accounts...');
     const adminPasswordHash = await hashPassword('admin123');
     const [adminUser] = await db.insert(users).values({
       email: 'admin@teamstats.com',
@@ -97,17 +106,28 @@ export async function POST(request: NextRequest) {
     console.log('✅ Created season');
 
     // Step 3: Process Season Totals sheet to create players
+    console.log('⚾ Processing player data...');
     let playersData: PlayerRow[] = [];
     const seasonTotalsSheet = workbook.Sheets['Season_Totals'] || workbook.Sheets['Totals'] || workbook.Sheets[workbook.SheetNames[0]];
     
     if (seasonTotalsSheet) {
+      console.log('📊 Found season totals sheet');
       playersData = XLSX.utils.sheet_to_json<PlayerRow>(seasonTotalsSheet);
-      console.log('Found players data:', playersData.length);
+      console.log('👥 Found players data:', playersData.length);
+      console.log('📝 Sample player data:', playersData[0] ? Object.keys(playersData[0]) : 'No players');
 
       for (const playerRow of playersData) {
-        const nameParts = playerRow['Player Name'].trim().split(' ');
+        const playerName = playerRow['Player Name'];
+        if (!playerName) {
+          console.log('⚠️ Skipping player with no name:', playerRow);
+          continue;
+        }
+        
+        const nameParts = playerName.trim().split(' ');
         const firstName = nameParts[0];
         const lastName = nameParts.slice(1).join(' ') || firstName;
+        
+        console.log('👤 Creating player:', firstName, lastName);
         
         await db.insert(players).values({
           firstName,
@@ -117,6 +137,8 @@ export async function POST(request: NextRequest) {
         });
       }
       console.log('✅ Created players');
+    } else {
+      console.log('⚠️ No season totals sheet found');
     }
 
     // Step 4: Process Games sheet (if exists)
