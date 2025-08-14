@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
         COUNT(hpg.id) as total_games,
         MIN(hg.season_year) as first_season,
         MAX(hg.season_year) as last_season,
-        STRING_AGG(DISTINCT hg.season_year::text, ', ' ORDER BY hg.season_year) as seasons_played
+        STRING_AGG(DISTINCT hg.season_year::text, ', ') as seasons_played
       FROM historical_players hp
       LEFT JOIN historical_player_games hpg ON hp.id = hpg.player_id
       LEFT JOIN historical_games hg ON hpg.game_id = hg.id
