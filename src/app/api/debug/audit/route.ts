@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
         hg.game_number,
         hg.opponent,
         COUNT(hpg.id) as player_count,
-        STRING_AGG(hp.name, ', ' ORDER BY hp.name) as players
+        STRING_AGG(hp.name, ', ') as players
       FROM historical_games hg
       LEFT JOIN historical_player_games hpg ON hg.id = hpg.game_id
       LEFT JOIN historical_players hp ON hpg.player_id = hp.id
