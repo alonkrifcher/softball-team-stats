@@ -11,13 +11,41 @@ export default function SetupPage() {
   const [credentials, setCredentials] = useState<any>(null);
   const [summary, setSummary] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [setupType, setSetupType] = useState<'sample' | 'import' | 'team'>('sample');
+  const [setupType, setSetupType] = useState<'sample' | 'import' | 'team' | 'simple'>('simple');
   const router = useRouter();
 
   const runSetup = async () => {
     setStatus('running');
     
-    if (setupType === 'team') {
+    if (setupType === 'simple') {
+      setMessage('Setting up database with simple approach...');
+      
+      try {
+        const response = await fetch('/api/setup/simple', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setStatus('success');
+          setMessage('Simple setup completed successfully!');
+          setCredentials(data.credentials);
+          setSummary(data.summary);
+        } else {
+          setStatus('error');
+          setMessage(data.error || 'Simple setup failed');
+          console.error('Simple setup error:', data);
+        }
+      } catch (error) {
+        setStatus('error');
+        setMessage('Network error during simple setup');
+        console.error('Simple setup error:', error);
+      }
+    } else if (setupType === 'team') {
       setMessage('Importing Underhand Jobs team data...');
       
       try {
@@ -141,47 +169,88 @@ export default function SetupPage() {
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-center">Choose Setup Method</h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                  <button
+                    onClick={() => setSetupType('simple')}
+                    className={`p-3 border-2 rounded-lg transition-colors ${
+                      setupType === 'simple' 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Database className="h-6 w-6 mx-auto mb-2 text-blue-600" />
+                    <div className="font-semibold text-sm">Simple Setup</div>
+                    <div className="text-xs text-gray-600">Clean & easy</div>
+                  </button>
+                  
                   <button
                     onClick={() => setSetupType('sample')}
-                    className={`p-4 border-2 rounded-lg transition-colors ${
+                    className={`p-3 border-2 rounded-lg transition-colors ${
                       setupType === 'sample' 
                         ? 'border-blue-500 bg-blue-50' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <Play className="h-8 w-8 mx-auto mb-2 text-purple-600" />
-                    <div className="font-semibold">Sample Data</div>
-                    <div className="text-sm text-gray-600">Start with example players</div>
+                    <Play className="h-6 w-6 mx-auto mb-2 text-purple-600" />
+                    <div className="font-semibold text-sm">Sample Data</div>
+                    <div className="text-xs text-gray-600">Example players</div>
                   </button>
                   
                   <button
                     onClick={() => setSetupType('team')}
-                    className={`p-4 border-2 rounded-lg transition-colors ${
+                    className={`p-3 border-2 rounded-lg transition-colors ${
                       setupType === 'team' 
                         ? 'border-blue-500 bg-blue-50' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <Users className="h-8 w-8 mx-auto mb-2 text-orange-600" />
-                    <div className="font-semibold">Team Data</div>
-                    <div className="text-sm text-gray-600">Underhand Jobs 2025</div>
+                    <Users className="h-6 w-6 mx-auto mb-2 text-orange-600" />
+                    <div className="font-semibold text-sm">Team Data</div>
+                    <div className="text-xs text-gray-600">Underhand Jobs</div>
                   </button>
                   
                   <button
                     onClick={() => setSetupType('import')}
-                    className={`p-4 border-2 rounded-lg transition-colors ${
+                    className={`p-3 border-2 rounded-lg transition-colors ${
                       setupType === 'import' 
                         ? 'border-blue-500 bg-blue-50' 
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                   >
-                    <FileSpreadsheet className="h-8 w-8 mx-auto mb-2 text-green-600" />
-                    <div className="font-semibold">Import Excel</div>
-                    <div className="text-sm text-gray-600">Upload your team data</div>
+                    <FileSpreadsheet className="h-6 w-6 mx-auto mb-2 text-green-600" />
+                    <div className="font-semibold text-sm">Import Excel</div>
+                    <div className="text-xs text-gray-600">Upload data</div>
                   </button>
                 </div>
               </div>
+
+              {/* Simple Setup */}
+              {setupType === 'simple' && (
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-6">
+                    Ultra-simple setup that creates everything cleanly:
+                  </p>
+                  
+                  <div className="space-y-3 text-left">
+                    <div className="flex items-center text-sm">
+                      <Database className="h-4 w-4 text-blue-600 mr-2" />
+                      Clean database tables (drops existing)
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <Users className="h-4 w-4 text-orange-600 mr-2" />
+                      24 Underhand Jobs players
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <Calendar className="h-4 w-4 text-green-600 mr-2" />
+                      2025 season with 9 games
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <CheckCircle className="h-4 w-4 text-purple-600 mr-2" />
+                      Simple passwords: "password"
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Team Data Setup */}
               {setupType === 'team' && (
@@ -275,7 +344,12 @@ export default function SetupPage() {
                 size="lg"
                 disabled={setupType === 'import' && !selectedFile}
               >
-                {setupType === 'team' ? (
+                {setupType === 'simple' ? (
+                  <>
+                    <Database className="h-4 w-4 mr-2" />
+                    Simple Setup
+                  </>
+                ) : setupType === 'team' ? (
                   <>
                     <Users className="h-4 w-4 mr-2" />
                     Import Team Data
