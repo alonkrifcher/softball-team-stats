@@ -5,19 +5,21 @@
 @layer base {
   :root {
     --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
+    --foreground: 0 0% 0%; /* Black for text */
+    --primary: 203 64% 66%; /* #7BAFD4 - Team blue */
+    --primary-foreground: 0 0% 100%; /* White text on team blue */
     --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 84% 4.9%;
+    --secondary-foreground: 0 0% 0%; /* Black */
     --muted: 210 40% 96%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted-foreground: 0 0% 35%; /* Dark gray */
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
+    --ring: 203 64% 66%; /* Team blue for focus rings */
     --radius: 0.5rem;
+    --team-blue: 203 64% 66%; /* #7BAFD4 */
+    --team-black: 0 0% 0%; /* Black */
   }
 }
 

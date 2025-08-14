@@ -61,12 +61,17 @@ export default function Navigation({ user }: NavigationProps) {
     navigation.push({ name: 'Settings', href: '/settings', icon: Settings });
   }
 
+  // Filter navigation for players (read-only access)
+  const filteredNavigation = user.role === 'player' 
+    ? navigation.filter(item => !['Settings'].includes(item.name))
+    : navigation;
+
   return (
     <>
       {/* Mobile header */}
       {!isLargeScreen && (
         <div className="bg-white shadow-sm border-b px-6 py-4 flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Team Stats</h1>
+          <h1 className="text-xl font-bold text-gray-900">UHJ Homepage</h1>
           <button
             type="button"
             className="p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
@@ -93,13 +98,13 @@ export default function Navigation({ user }: NavigationProps) {
       >
         {isLargeScreen && (
           <div className="px-6 py-4">
-            <h1 className="text-xl font-bold text-gray-900">Team Stats</h1>
+            <h1 className="text-xl font-bold text-gray-900">UHJ Homepage</h1>
           </div>
         )}
 
         <div className="flex flex-col flex-1">
           <nav className="flex-1 space-y-1 px-4 pb-4">
-            {navigation.map((item) => {
+            {filteredNavigation.map((item) => {
               const Icon = item.icon;
               const isActive = pathname === item.href;
               
