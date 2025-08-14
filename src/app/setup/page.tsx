@@ -3,41 +3,89 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
-import { CheckCircle, AlertCircle, Database, Users, Calendar, Play } from 'lucide-react';
+import { CheckCircle, AlertCircle, Database, Users, Calendar, Play, Upload, FileSpreadsheet } from 'lucide-react';
 
 export default function SetupPage() {
   const [status, setStatus] = useState<'ready' | 'running' | 'success' | 'error'>('ready');
   const [message, setMessage] = useState('');
   const [credentials, setCredentials] = useState<any>(null);
+  const [summary, setSummary] = useState<any>(null);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [setupType, setSetupType] = useState<'sample' | 'import'>('sample');
   const router = useRouter();
 
   const runSetup = async () => {
     setStatus('running');
-    setMessage('Initializing database...');
-
-    try {
-      const response = await fetch('/api/setup', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        setStatus('success');
-        setMessage('Database setup completed successfully!');
-        setCredentials(data.credentials);
-      } else {
+    
+    if (setupType === 'import') {
+      if (!selectedFile) {
         setStatus('error');
-        setMessage(data.error || 'Setup failed');
-        console.error('Setup error:', data);
+        setMessage('Please select an Excel file to import');
+        return;
       }
-    } catch (error) {
-      setStatus('error');
-      setMessage('Network error during setup');
-      console.error('Setup error:', error);
+      
+      setMessage('Processing Excel file...');
+      
+      const formData = new FormData();
+      formData.append('file', selectedFile);
+      
+      try {
+        const response = await fetch('/api/setup/import', {
+          method: 'POST',
+          body: formData,
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setStatus('success');
+          setMessage('Excel data imported successfully!');
+          setCredentials(data.credentials);
+          setSummary(data.summary);
+        } else {
+          setStatus('error');
+          setMessage(data.error || 'Import failed');
+          console.error('Import error:', data);
+        }
+      } catch (error) {
+        setStatus('error');
+        setMessage('Network error during import');
+        console.error('Import error:', error);
+      }
+    } else {
+      setMessage('Initializing database...');
+
+      try {
+        const response = await fetch('/api/setup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setStatus('success');
+          setMessage('Database setup completed successfully!');
+          setCredentials(data.credentials);
+        } else {
+          setStatus('error');
+          setMessage(data.error || 'Setup failed');
+          console.error('Setup error:', data);
+        }
+      } catch (error) {
+        setStatus('error');
+        setMessage('Network error during setup');
+        console.error('Setup error:', error);
+      }
+    }
+  };
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      setSelectedFile(file);
     }
   };
 
@@ -61,35 +109,118 @@ export default function SetupPage() {
         <div className="card p-6 space-y-6">
           {status === 'ready' && (
             <>
-              <div className="text-center">
-                <h2 className="text-lg font-semibold mb-4">Ready to Initialize</h2>
-                <p className="text-sm text-gray-600 mb-6">
-                  This will create your database tables and add sample data including:
-                </p>
+              {/* Setup Type Selection */}
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-center">Choose Setup Method</h2>
                 
-                <div className="space-y-3 text-left">
-                  <div className="flex items-center text-sm">
-                    <Users className="h-4 w-4 text-blue-600 mr-2" />
-                    Admin and Manager accounts
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <Calendar className="h-4 w-4 text-green-600 mr-2" />
-                    Current season setup
-                  </div>
-                  <div className="flex items-center text-sm">
-                    <Play className="h-4 w-4 text-purple-600 mr-2" />
-                    10 sample players
-                  </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <button
+                    onClick={() => setSetupType('sample')}
+                    className={`p-4 border-2 rounded-lg transition-colors ${
+                      setupType === 'sample' 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Play className="h-8 w-8 mx-auto mb-2 text-purple-600" />
+                    <div className="font-semibold">Sample Data</div>
+                    <div className="text-sm text-gray-600">Start with example players</div>
+                  </button>
+                  
+                  <button
+                    onClick={() => setSetupType('import')}
+                    className={`p-4 border-2 rounded-lg transition-colors ${
+                      setupType === 'import' 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <FileSpreadsheet className="h-8 w-8 mx-auto mb-2 text-green-600" />
+                    <div className="font-semibold">Import Excel</div>
+                    <div className="text-sm text-gray-600">Upload your team data</div>
+                  </button>
                 </div>
               </div>
+
+              {/* Sample Data Setup */}
+              {setupType === 'sample' && (
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-6">
+                    This will create your database tables and add sample data including:
+                  </p>
+                  
+                  <div className="space-y-3 text-left">
+                    <div className="flex items-center text-sm">
+                      <Users className="h-4 w-4 text-blue-600 mr-2" />
+                      Admin and Manager accounts
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <Calendar className="h-4 w-4 text-green-600 mr-2" />
+                      Current season setup
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <Play className="h-4 w-4 text-purple-600 mr-2" />
+                      10 sample players
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Excel Import Setup */}
+              {setupType === 'import' && (
+                <div className="space-y-4">
+                  <div className="text-center">
+                    <p className="text-sm text-gray-600 mb-4">
+                      Upload your Excel file with team data. Expected format:
+                    </p>
+                    <div className="text-xs text-left bg-gray-50 p-3 rounded space-y-1">
+                      <div><strong>Sheet 1:</strong> "Season_Totals" - Player season statistics</div>
+                      <div><strong>Sheet 2+:</strong> Individual game sheets with player stats</div>
+                      <div><strong>Optional:</strong> "Games" sheet with game info</div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-gray-700">
+                      Select Excel File (.xlsx)
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={handleFileSelect}
+                        className="flex-1 text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                      />
+                      {selectedFile && (
+                        <CheckCircle className="h-5 w-5 text-green-600" />
+                      )}
+                    </div>
+                    {selectedFile && (
+                      <p className="text-sm text-green-600">
+                        Selected: {selectedFile.name}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
 
               <Button 
                 onClick={runSetup}
                 className="w-full"
                 size="lg"
+                disabled={setupType === 'import' && !selectedFile}
               >
-                <Database className="h-4 w-4 mr-2" />
-                Initialize Database
+                {setupType === 'import' ? (
+                  <>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Import Excel Data
+                  </>
+                ) : (
+                  <>
+                    <Database className="h-4 w-4 mr-2" />
+                    Initialize with Sample Data
+                  </>
+                )}
               </Button>
             </>
           )}
