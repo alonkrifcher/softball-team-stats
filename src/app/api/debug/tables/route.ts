@@ -14,6 +14,7 @@ export async function GET(request: NextRequest) {
     `);
 
     console.log('📋 Historical tables found:', tables);
+    console.log('🔍 Debug endpoint accessed at:', new Date().toISOString());
 
     // Check data counts in each table
     const results: any = {
