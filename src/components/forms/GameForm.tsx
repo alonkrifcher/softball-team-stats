@@ -64,7 +64,7 @@ export default function GameForm({ initialData, onSubmit, onCancel, isSubmitting
 
   const loadSeasons = async () => {
     try {
-      const response = await fetch('/api/seasons');
+      const response = await fetch('/api/seasons/combined');
       if (response.ok) {
         const data = await response.json();
         setSeasons(data.seasons);
@@ -108,8 +108,10 @@ export default function GameForm({ initialData, onSubmit, onCancel, isSubmitting
           <Select {...register('seasonId', { valueAsNumber: true })} disabled={loadingSeasons}>
             <option value="">Select season...</option>
             {seasons.map((season) => (
-              <option key={season.id} value={season.id}>
+              <option key={`${season.source}-${season.id}`} value={season.id}>
                 {season.name} ({season.year})
+                {season.source === 'historical' ? ' - Historical' : ''}
+                {season.isActive ? ' - Active' : ''}
               </option>
             ))}
           </Select>

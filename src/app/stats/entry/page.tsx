@@ -63,7 +63,7 @@ export default function StatsEntryPage() {
   const handleCreateGame = async (gameData: any) => {
     setSubmitting(true);
     try {
-      const response = await fetch('/api/games', {
+      const response = await fetch('/api/games/universal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -99,7 +99,7 @@ export default function StatsEntryPage() {
 
     setSubmitting(true);
     try {
-      const response = await fetch(`/api/games/${selectedGame.id}/stats`, {
+      const response = await fetch(`/api/games/${selectedGame.id}/stats/universal`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

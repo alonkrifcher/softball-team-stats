@@ -22,15 +22,20 @@ export interface Player {
   primaryPosition?: string;
   isActive: boolean;
   user?: User;
+  source?: 'current' | 'historical';
+  displayName?: string;
+  fullName?: string;
 }
 
 export interface Season {
   id: number;
   name: string;
   year: number;
-  startDate: Date;
-  endDate: Date;
+  startDate: Date | null;
+  endDate: Date | null;
   isActive: boolean;
+  source?: 'current' | 'historical';
+  type?: 'current' | 'historical';
 }
 
 export interface Game {

@@ -111,7 +111,7 @@ export default function StatsEntryForm({
 
   const loadPlayers = async () => {
     try {
-      const response = await fetch('/api/players');
+      const response = await fetch('/api/players/universal');
       if (response.ok) {
         const data = await response.json();
         setPlayers(data.players);
@@ -254,8 +254,10 @@ export default function StatsEntryForm({
                       >
                         <option value={0}>Select player...</option>
                         {players.map((player) => (
-                          <option key={player.id} value={player.id}>
-                            #{player.jerseyNumber || '??'} {player.firstName} {player.lastName}
+                          <option key={`${player.source}-${player.id}`} value={player.id}>
+                            {player.displayName || `${player.firstName} ${player.lastName}`}
+                            {player.jerseyNumber ? ` (#${player.jerseyNumber})` : ''}
+                            {player.source === 'historical' ? ' - Historical' : ''}
                           </option>
                         ))}
                       </Select>
