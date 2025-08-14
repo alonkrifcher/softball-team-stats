@@ -1,7 +1,7 @@
 'use client';
 
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { BarChart3, Calendar, Users, TrendingUp, Upload } from 'lucide-react';
+import { BarChart3, Calendar, Users, TrendingUp, Upload, History, FileText } from 'lucide-react';
 
 export default function Dashboard() {
   return (
@@ -77,15 +77,22 @@ export default function Dashboard() {
         {/* Quick Actions */}
         <div className="card p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <a href="/dashboard/import-stats" className="btn-primary btn-md justify-start">
-              <Upload className="h-4 w-4 mr-2" />
-              Import 2025 Stats
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            <a href="/dashboard/csv-import" className="btn-primary btn-md justify-start">
+              <FileText className="h-4 w-4 mr-2" />
+              Import All-Time CSV
+            </a>
+            <a href="/history" className="btn-primary btn-md justify-start">
+              <History className="h-4 w-4 mr-2" />
+              View History
             </a>
             <a href="/stats/entry" className="btn-outline btn-md justify-start">
               <BarChart3 className="h-4 w-4 mr-2" />
               Enter Game Stats
             </a>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             <a href="/roster" className="btn-outline btn-md justify-start">
               <Users className="h-4 w-4 mr-2" />
               Manage Roster
@@ -93,6 +100,10 @@ export default function Dashboard() {
             <a href="/schedule" className="btn-outline btn-md justify-start">
               <Calendar className="h-4 w-4 mr-2" />
               View Schedule
+            </a>
+            <a href="/dashboard/import-stats" className="btn-outline btn-md justify-start">
+              <Upload className="h-4 w-4 mr-2" />
+              Import 2025 Stats
             </a>
           </div>
         </div>
