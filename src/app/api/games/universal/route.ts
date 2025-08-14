@@ -59,16 +59,16 @@ export async function POST(request: NextRequest) {
       // Create in historical system
       console.log('🏛️ Creating game in historical system...');
       
-      // Get next game ID for historical system
-      const maxGameIdResult = await db.execute(sql`
-        SELECT COALESCE(MAX(game_id), 0) as max_id FROM historical_games
+      // Get next game number for historical system
+      const maxGameNumberResult = await db.execute(sql`
+        SELECT COALESCE(MAX(game_number), 0) as max_game_number FROM historical_games
+        WHERE season_year = ${seasonId}
       `);
-      const nextGameId = Number(maxGameIdResult[0]?.max_id || 0) + 1;
+      const nextGameNumber = Number(maxGameNumberResult[0]?.max_game_number || 0) + 1;
 
-      // Insert into historical_games (using season_year not season_id)
-      await db.execute(sql`
+      // Insert into historical_games (using correct column names)
+      const insertResult = await db.execute(sql`
         INSERT INTO historical_games (
-          game_id, 
           season_year, 
           game_number, 
           game_date, 
@@ -78,19 +78,24 @@ export async function POST(request: NextRequest) {
           opp_runs
         )
         VALUES (
-          ${nextGameId},
           ${seasonId},
-          ${nextGameId}, 
+          ${nextGameNumber}, 
           ${gameDate},
           ${opponent},
           'TBD',
           NULL,
           NULL
         )
+        RETURNING id
       `);
 
+      if (insertResult.length === 0) {
+        throw new Error('Failed to create historical game - no ID returned');
+      }
+
+      const newGameId = insertResult[0].id;
       gameResult = {
-        id: nextGameId,
+        id: newGameId,
         seasonId: seasonId,
         gameDate: gameDate,
         opponent: opponent,
@@ -103,7 +108,7 @@ export async function POST(request: NextRequest) {
         system: 'historical'
       };
 
-      console.log(`✅ Created historical game ID: ${nextGameId}`);
+      console.log(`✅ Created historical game ID: ${newGameId}, game number: ${nextGameNumber}`);
 
     } else {
       // Create in current system

@@ -16,7 +16,7 @@ export async function GET() {
         MAX(hg.season_year) as last_season,
         STRING_AGG(DISTINCT CAST(hg.season_year AS VARCHAR), ', ' ORDER BY CAST(hg.season_year AS VARCHAR)) as seasons_list,
         
-        -- Batting stats (using same columns as all-time-stats)
+        -- Batting stats (using same columns as working historical APIs)
         COALESCE(SUM(hpg.at_bats), 0) as total_at_bats,
         COALESCE(SUM(hpg.hits), 0) as total_hits,
         COALESCE(SUM(hpg.runs), 0) as total_runs,

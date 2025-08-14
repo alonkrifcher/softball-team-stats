@@ -35,7 +35,7 @@ export async function GET() {
         'Various' as "primaryPosition",
         true as "isActive",
         'historical' as source,
-        hp.name
+        hp.name as name
       FROM historical_players hp
       WHERE hp.name IS NOT NULL AND hp.name != ''
       ORDER BY hp.name ASC
