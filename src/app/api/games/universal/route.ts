@@ -1,11 +1,32 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
 import { db } from '@/lib/db';
 import { sql } from 'drizzle-orm';
+import { getAuthUser, hasRequiredRole, createAuthError } from '@/lib/auth/simple';
+
+const createGameSchema = z.object({
+  seasonId: z.number().int(),
+  gameDate: z.string().datetime(),
+  opponent: z.string().min(1),
+  homeAway: z.enum(['home', 'away']),
+  location: z.string().optional(),
+  notes: z.string().optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
+    // Authentication check
+    const user = await getAuthUser(request);
+    if (!user) {
+      return createAuthError('Authentication required', 401);
+    }
+
+    if (!hasRequiredRole(user.role, 'manager')) {
+      return createAuthError('Insufficient permissions', 403);
+    }
+
     const body = await request.json();
-    const { seasonId, gameDate, opponent, homeAway, location, notes } = body;
+    const { seasonId, gameDate, opponent, homeAway, location, notes } = createGameSchema.parse(body);
 
     console.log('🎮 Creating universal game for season:', seasonId);
     
@@ -169,6 +190,13 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
+    if (error instanceof z.ZodError) {
+      return NextResponse.json(
+        { error: 'Invalid input', details: error.errors },
+        { status: 400 }
+      );
+    }
+
     console.error('❌ Universal game creation error:', error);
     
     return NextResponse.json(
