@@ -24,8 +24,17 @@ export async function GET() {
     // Get historical seasons
     const historicalSeasonsData = await db.execute(sql`
       SELECT 
-        season_id as id,
-        season_name as name,
+        year as id,
+        CASE 
+          WHEN year = 2018 THEN 'Spring/Summer 2018'
+          WHEN year = 2019 THEN 'Spring/Summer 2019' 
+          WHEN year = 2021 THEN 'Spring/Summer 2021'
+          WHEN year = 2022 THEN 'Spring/Summer 2022'
+          WHEN year = 2023 THEN 'Spring/Summer 2023'
+          WHEN year = 2024 THEN 'Spring/Summer 2024'
+          WHEN year = 2025 THEN 'Spring/Summer 2025'
+          ELSE CONCAT('Season ', year)
+        END as name,
         year,
         NULL as "startDate",
         NULL as "endDate",
@@ -33,7 +42,7 @@ export async function GET() {
         NULL as "createdAt",
         'historical' as source
       FROM historical_seasons
-      ORDER BY year DESC, season_name ASC
+      ORDER BY year DESC
     `);
 
     // Combine and format seasons

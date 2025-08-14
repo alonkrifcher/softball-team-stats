@@ -23,22 +23,22 @@ export async function GET() {
 
     // Get historical players from our roster system
     const historicalPlayersData = await db.execute(sql`
-      SELECT DISTINCT
-        ROW_NUMBER() OVER (ORDER BY player_name) + 10000 as id,
-        SPLIT_PART(player_name, ' ', 1) as "firstName",
+      SELECT 
+        hp.id + 10000 as id,
+        SPLIT_PART(hp.name, ' ', 1) as "firstName",
         CASE 
-          WHEN LENGTH(player_name) - LENGTH(REPLACE(player_name, ' ', '')) > 0
-          THEN TRIM(SUBSTRING(player_name FROM POSITION(' ' IN player_name)))
+          WHEN LENGTH(hp.name) - LENGTH(REPLACE(hp.name, ' ', '')) > 0
+          THEN TRIM(SUBSTRING(hp.name FROM POSITION(' ' IN hp.name)))
           ELSE ''
         END as "lastName",
         NULL as "jerseyNumber",
-        STRING_AGG(DISTINCT position, '/') as "primaryPosition",
+        'Various' as "primaryPosition",
         true as "isActive",
-        'historical' as source
-      FROM historical_player_game_stats
-      WHERE player_name IS NOT NULL AND player_name != ''
-      GROUP BY player_name
-      ORDER BY player_name ASC
+        'historical' as source,
+        hp.name
+      FROM historical_players hp
+      WHERE hp.name IS NOT NULL AND hp.name != ''
+      ORDER BY hp.name ASC
     `);
 
     // Format current players
