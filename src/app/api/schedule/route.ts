@@ -9,32 +9,44 @@ export async function GET(request: NextRequest) {
     
     console.log('📅 Fetching historical schedule...');
 
-    let whereClause = '';
-    let params: any[] = [];
-    
-    if (year) {
-      whereClause = 'WHERE hg.season_year = $1';
-      params = [parseInt(year)];
-    }
-
     // Get all games with results
-    const games = await db.execute(sql.raw(`
-      SELECT 
-        hg.id,
-        hg.season_year,
-        hg.game_number,
-        hg.game_date,
-        hg.opponent,
-        hg.result,
-        hg.uhj_runs,
-        hg.opp_runs,
-        COUNT(hpg.id) as player_count
-      FROM historical_games hg
-      LEFT JOIN historical_player_games hpg ON hg.id = hpg.game_id
-      ${whereClause}
-      GROUP BY hg.id, hg.season_year, hg.game_number, hg.game_date, hg.opponent, hg.result, hg.uhj_runs, hg.opp_runs
-      ORDER BY hg.season_year DESC, hg.game_date ASC, hg.game_number ASC
-    `, params));
+    let games;
+    if (year) {
+      games = await db.execute(sql`
+        SELECT 
+          hg.id,
+          hg.season_year,
+          hg.game_number,
+          hg.game_date,
+          hg.opponent,
+          hg.result,
+          hg.uhj_runs,
+          hg.opp_runs,
+          COUNT(hpg.id) as player_count
+        FROM historical_games hg
+        LEFT JOIN historical_player_games hpg ON hg.id = hpg.game_id
+        WHERE hg.season_year = ${parseInt(year)}
+        GROUP BY hg.id, hg.season_year, hg.game_number, hg.game_date, hg.opponent, hg.result, hg.uhj_runs, hg.opp_runs
+        ORDER BY hg.season_year DESC, hg.game_date ASC, hg.game_number ASC
+      `);
+    } else {
+      games = await db.execute(sql`
+        SELECT 
+          hg.id,
+          hg.season_year,
+          hg.game_number,
+          hg.game_date,
+          hg.opponent,
+          hg.result,
+          hg.uhj_runs,
+          hg.opp_runs,
+          COUNT(hpg.id) as player_count
+        FROM historical_games hg
+        LEFT JOIN historical_player_games hpg ON hg.id = hpg.game_id
+        GROUP BY hg.id, hg.season_year, hg.game_number, hg.game_date, hg.opponent, hg.result, hg.uhj_runs, hg.opp_runs
+        ORDER BY hg.season_year DESC, hg.game_date ASC, hg.game_number ASC
+      `);
+    }
 
     // Get available seasons
     const seasons = await db.execute(sql`
