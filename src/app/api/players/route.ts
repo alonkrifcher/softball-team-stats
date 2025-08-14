@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq, asc } from 'drizzle-orm';
-import { db, players, users } from '@/lib/db';
-import { withRole } from '@/lib/auth/middleware';
+import { db, players } from '@/lib/db';
+import { getAuthUser, hasRequiredRole, createAuthError } from '@/lib/auth/simple';
 
 const createPlayerSchema = z.object({
   firstName: z.string().min(1),
@@ -13,8 +13,13 @@ const createPlayerSchema = z.object({
 });
 
 // GET /api/players - Get all active players
-export const GET = withRole('player', async (request: NextRequest) => {
+export async function GET(request: NextRequest) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) {
+      return createAuthError('Authentication required', 401);
+    }
+
     const allPlayers = await db.query.players.findMany({
       where: eq(players.isActive, true),
       orderBy: [asc(players.lastName), asc(players.firstName)],
@@ -39,11 +44,20 @@ export const GET = withRole('player', async (request: NextRequest) => {
       { status: 500 }
     );
   }
-});
+}
 
 // POST /api/players - Create new player
-export const POST = withRole('manager', async (request: NextRequest) => {
+export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) {
+      return createAuthError('Authentication required', 401);
+    }
+
+    if (!hasRequiredRole(user.role, 'manager')) {
+      return createAuthError('Insufficient permissions', 403);
+    }
+
     const body = await request.json();
     const { firstName, lastName, jerseyNumber, primaryPosition, userId } = createPlayerSchema.parse(body);
 
@@ -100,4 +114,4 @@ export const POST = withRole('manager', async (request: NextRequest) => {
       { status: 500 }
     );
   }
-});
+}

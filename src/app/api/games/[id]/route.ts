@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db, games } from '@/lib/db';
-import { withRole } from '@/lib/auth/middleware';
+import { authenticate, checkRole } from '@/lib/auth/middleware';
 
 const updateGameSchema = z.object({
   gameDate: z.string().datetime().optional(),
@@ -16,11 +16,10 @@ const updateGameSchema = z.object({
 });
 
 // GET /api/games/[id] - Get specific game
-export const GET = withRole('player', async (
+export async function GET(
   request: NextRequest,
-  payload: any,
   { params }: { params: { id: string } }
-) => {
+) {
   try {
     const gameId = parseInt(params.id);
     

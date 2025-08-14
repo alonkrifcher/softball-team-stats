@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db, players } from '@/lib/db';
-import { withRole } from '@/lib/auth/middleware';
+import { authenticate, checkRole } from '@/lib/auth/middleware';
 
 const updatePlayerSchema = z.object({
   firstName: z.string().min(1).optional(),
@@ -13,12 +13,16 @@ const updatePlayerSchema = z.object({
 });
 
 // GET /api/players/[id] - Get specific player
-export const GET = withRole('player', async (
+export async function GET(
   request: NextRequest,
-  payload: any,
   { params }: { params: { id: string } }
-) => {
+) {
   try {
+    const auth = await authenticate(request);
+    if ('error' in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
     const playerId = parseInt(params.id);
     
     const player = await db.query.players.findFirst({
@@ -51,15 +55,26 @@ export const GET = withRole('player', async (
       { status: 500 }
     );
   }
-});
+}
 
 // PUT /api/players/[id] - Update player
-export const PUT = withRole('manager', async (
+export async function PUT(
   request: NextRequest,
-  payload: any,
   { params }: { params: { id: string } }
-) => {
+) {
   try {
+    const auth = await authenticate(request);
+    if ('error' in auth) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status });
+    }
+
+    if (!checkRole(auth.payload.role, 'manager')) {
+      return NextResponse.json(
+        { error: 'Insufficient permissions' },
+        { status: 403 }
+      );
+    }
+
     const playerId = parseInt(params.id);
     const body = await request.json();
     const updateData = updatePlayerSchema.parse(body);
@@ -124,4 +139,4 @@ export const PUT = withRole('manager', async (
       { status: 500 }
     );
   }
-});
+}

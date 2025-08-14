@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq, desc } from 'drizzle-orm';
 import { db, seasons } from '@/lib/db';
-import { withRole } from '@/lib/auth/middleware';
+import { getAuthUser, hasRequiredRole, createAuthError } from '@/lib/auth/simple';
 
 const createSeasonSchema = z.object({
   name: z.string().min(1),
@@ -12,8 +12,13 @@ const createSeasonSchema = z.object({
 });
 
 // GET /api/seasons - Get all seasons
-export const GET = withRole('player', async (request: NextRequest) => {
+export async function GET(request: NextRequest) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) {
+      return createAuthError('Authentication required', 401);
+    }
+
     const allSeasons = await db.query.seasons.findMany({
       orderBy: [desc(seasons.year), desc(seasons.startDate)],
     });
@@ -26,11 +31,20 @@ export const GET = withRole('player', async (request: NextRequest) => {
       { status: 500 }
     );
   }
-});
+}
 
 // POST /api/seasons - Create new season
-export const POST = withRole('manager', async (request: NextRequest) => {
+export async function POST(request: NextRequest) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) {
+      return createAuthError('Authentication required', 401);
+    }
+
+    if (!hasRequiredRole(user.role, 'manager')) {
+      return createAuthError('Insufficient permissions', 403);
+    }
+
     const body = await request.json();
     const { name, year, startDate, endDate } = createSeasonSchema.parse(body);
 
@@ -62,4 +76,4 @@ export const POST = withRole('manager', async (request: NextRequest) => {
       { status: 500 }
     );
   }
-});
+}
