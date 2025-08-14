@@ -9,52 +9,46 @@ export async function GET() {
     // Get all players with their career stats from historical data
     const playersData = await db.execute(sql`
       SELECT 
-        p.player_name,
-        COUNT(DISTINCT pgs.game_id) as total_games,
-        COUNT(DISTINCT s.year) as seasons_played,
-        MIN(s.year) as first_season,
-        MAX(s.year) as last_season,
-        STRING_AGG(DISTINCT CAST(s.year AS VARCHAR), ', ' ORDER BY CAST(s.year AS VARCHAR)) as seasons_list,
+        hp.name as player_name,
+        COUNT(hpg.id) as total_games,
+        COUNT(DISTINCT hg.season_year) as seasons_played,
+        MIN(hg.season_year) as first_season,
+        MAX(hg.season_year) as last_season,
+        STRING_AGG(DISTINCT CAST(hg.season_year AS VARCHAR), ', ' ORDER BY CAST(hg.season_year AS VARCHAR)) as seasons_list,
         
-        -- Batting stats
-        COALESCE(SUM(pgs.at_bats), 0) as total_at_bats,
-        COALESCE(SUM(pgs.hits), 0) as total_hits,
-        COALESCE(SUM(pgs.runs), 0) as total_runs,
-        COALESCE(SUM(pgs.rbis), 0) as total_rbis,
-        COALESCE(SUM(pgs.walks), 0) as total_walks,
-        COALESCE(SUM(pgs.strikeouts), 0) as total_strikeouts,
-        COALESCE(SUM(pgs.doubles), 0) as total_doubles,
-        COALESCE(SUM(pgs.triples), 0) as total_triples,
-        COALESCE(SUM(pgs.home_runs), 0) as total_home_runs,
-        COALESCE(SUM(pgs.stolen_bases), 0) as total_stolen_bases,
+        -- Batting stats (using same columns as all-time-stats)
+        COALESCE(SUM(hpg.at_bats), 0) as total_at_bats,
+        COALESCE(SUM(hpg.hits), 0) as total_hits,
+        COALESCE(SUM(hpg.runs), 0) as total_runs,
+        COALESCE(SUM(hpg.rbis), 0) as total_rbis,
+        COALESCE(SUM(hpg.walks), 0) as total_walks,
+        COALESCE(SUM(hpg.strikeouts), 0) as total_strikeouts,
+        COALESCE(SUM(hpg.singles), 0) as total_singles,
+        COALESCE(SUM(hpg.doubles), 0) as total_doubles,
+        COALESCE(SUM(hpg.triples), 0) as total_triples,
+        COALESCE(SUM(hpg.home_runs), 0) as total_home_runs,
         
         -- Calculated averages
         CASE 
-          WHEN SUM(pgs.at_bats) > 0 
-          THEN ROUND(CAST(SUM(pgs.hits) AS DECIMAL) / SUM(pgs.at_bats), 3)
+          WHEN SUM(hpg.at_bats) > 0 
+          THEN ROUND(SUM(hpg.hits)::decimal / SUM(hpg.at_bats)::decimal, 3)
           ELSE 0.000
         END as batting_average,
         
         CASE 
-          WHEN (SUM(pgs.at_bats) + SUM(pgs.walks)) > 0 
-          THEN ROUND(CAST(SUM(pgs.hits) + SUM(pgs.walks) AS DECIMAL) / (SUM(pgs.at_bats) + SUM(pgs.walks)), 3)
+          WHEN SUM(hpg.on_base_denominator) > 0 
+          THEN ROUND(SUM(hpg.on_base_numerator)::decimal / SUM(hpg.on_base_denominator)::decimal, 3)
           ELSE 0.000
         END as on_base_percentage,
         
-        -- Most recent season info
-        (SELECT STRING_AGG(DISTINCT position, ', ') 
-         FROM historical_player_game_stats hpgs 
-         WHERE hpgs.player_name = p.player_name 
-         AND hpgs.position IS NOT NULL 
-         AND hpgs.position != ''
-        ) as positions_played
+        -- Position info (placeholder for now)
+        'Various' as positions_played
         
-      FROM historical_players p
-      LEFT JOIN historical_player_game_stats pgs ON p.player_name = pgs.player_name
-      LEFT JOIN historical_games g ON pgs.game_id = g.game_id
-      LEFT JOIN historical_seasons s ON g.season_id = s.season_id
-      GROUP BY p.player_name
-      ORDER BY total_games DESC, p.player_name ASC
+      FROM historical_players hp
+      LEFT JOIN historical_player_games hpg ON hp.id = hpg.player_id
+      LEFT JOIN historical_games hg ON hpg.game_id = hg.id
+      GROUP BY hp.name
+      ORDER BY total_games DESC, hp.name ASC
     `);
 
     const players = playersData.map(row => ({
@@ -74,10 +68,11 @@ export async function GET() {
         rbis: Number(row.total_rbis) || 0,
         walks: Number(row.total_walks) || 0,
         strikeouts: Number(row.total_strikeouts) || 0,
+        singles: Number(row.total_singles) || 0,
         doubles: Number(row.total_doubles) || 0,
         triples: Number(row.total_triples) || 0,
         homeRuns: Number(row.total_home_runs) || 0,
-        stolenBases: Number(row.total_stolen_bases) || 0,
+        stolenBases: 0, // Not available in historical data
         battingAverage: Number(row.batting_average) || 0,
         onBasePercentage: Number(row.on_base_percentage) || 0,
       }
