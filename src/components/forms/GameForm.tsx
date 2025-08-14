@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Select } from '@/components/ui/Select';
 import { Season, Game } from '@/types';
-import { formatDate } from '@/lib/utils';
+import { formatDateForInput } from '@/lib/utils';
 
 const gameSchema = z.object({
   seasonId: z.number().int().min(1, 'Please select a season'),
@@ -42,14 +42,19 @@ export default function GameForm({ initialData, onSubmit, onCancel, isSubmitting
     resolver: zodResolver(gameSchema),
     defaultValues: initialData ? {
       seasonId: initialData.seasonId,
-      gameDate: formatDate(initialData.gameDate),
+      gameDate: formatDateForInput(initialData.gameDate),
       gameTime: new Date(initialData.gameDate).toTimeString().slice(0, 5),
       opponent: initialData.opponent,
       homeAway: initialData.homeAway,
       location: initialData.location || '',
       notes: initialData.notes || '',
     } : {
-      homeAway: 'home',
+      homeAway: 'home' as const,
+      gameDate: '',
+      gameTime: '',
+      opponent: '',
+      location: '',
+      notes: '',
     },
   });
 

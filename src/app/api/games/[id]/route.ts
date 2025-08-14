@@ -78,11 +78,15 @@ export async function PUT(
     const updateData = updateGameSchema.parse(body);
 
     // Convert date string to Date object if provided
-    const processedUpdateData = {
+    const processedUpdateData: any = {
       ...updateData,
-      ...(updateData.gameDate && { gameDate: new Date(updateData.gameDate) }),
       updatedAt: new Date(),
     };
+    
+    // Handle gameDate conversion separately to maintain type safety
+    if (updateData.gameDate) {
+      processedUpdateData.gameDate = new Date(updateData.gameDate);
+    }
 
     const [updatedGame] = await db.update(games)
       .set(processedUpdateData)

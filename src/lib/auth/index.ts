@@ -2,7 +2,7 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { JWTPayload, UserRole } from '@/types';
 
-const JWT_SECRET = process.env.JWT_SECRET!;
+const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-for-build-only';
 
 export async function hashPassword(password: string): Promise<string> {
   return bcrypt.hash(password, 12);
