@@ -45,11 +45,27 @@ const TEAM_DATA = {
 };
 
 async function createTablesIfNotExist() {
+  // Create enums first
+  try {
+    await db.execute(sql`CREATE TYPE user_role AS ENUM ('admin', 'manager', 'coach', 'player')`);
+  } catch (error) {
+    // Enum might already exist, ignore error
+  }
+  
+  try {
+    await db.execute(sql`CREATE TYPE game_status AS ENUM ('scheduled', 'in_progress', 'completed', 'cancelled')`);
+  } catch (error) {
+    // Enum might already exist, ignore error
+  }
+  
+  try {
+    await db.execute(sql`CREATE TYPE home_away AS ENUM ('home', 'away')`);
+  } catch (error) {
+    // Enum might already exist, ignore error
+  }
+  
+  // Create tables
   await db.execute(sql`
-    CREATE TYPE IF NOT EXISTS user_role AS ENUM ('admin', 'manager', 'coach', 'player');
-    CREATE TYPE IF NOT EXISTS game_status AS ENUM ('scheduled', 'in_progress', 'completed', 'cancelled');
-    CREATE TYPE IF NOT EXISTS home_away AS ENUM ('home', 'away');
-    
     CREATE TABLE IF NOT EXISTS users (
       id SERIAL PRIMARY KEY,
       email VARCHAR(255) NOT NULL UNIQUE,
@@ -60,8 +76,10 @@ async function createTablesIfNotExist() {
       is_active BOOLEAN NOT NULL DEFAULT true,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-    );
-    
+    )
+  `);
+  
+  await db.execute(sql`
     CREATE TABLE IF NOT EXISTS seasons (
       id SERIAL PRIMARY KEY,
       name VARCHAR(100) NOT NULL,
@@ -71,8 +89,10 @@ async function createTablesIfNotExist() {
       is_active BOOLEAN NOT NULL DEFAULT false,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-    );
-    
+    )
+  `);
+  
+  await db.execute(sql`
     CREATE TABLE IF NOT EXISTS players (
       id SERIAL PRIMARY KEY,
       first_name VARCHAR(100) NOT NULL,
@@ -82,8 +102,10 @@ async function createTablesIfNotExist() {
       is_active BOOLEAN NOT NULL DEFAULT true,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-    );
-    
+    )
+  `);
+  
+  await db.execute(sql`
     CREATE TABLE IF NOT EXISTS games (
       id SERIAL PRIMARY KEY,
       season_id INTEGER NOT NULL REFERENCES seasons(id),
@@ -96,8 +118,10 @@ async function createTablesIfNotExist() {
       status game_status NOT NULL DEFAULT 'completed',
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       updated_at TIMESTAMP NOT NULL DEFAULT NOW()
-    );
-    
+    )
+  `);
+  
+  await db.execute(sql`
     CREATE TABLE IF NOT EXISTS player_game_stats (
       id SERIAL PRIMARY KEY,
       player_id INTEGER NOT NULL REFERENCES players(id),
@@ -120,14 +144,16 @@ async function createTablesIfNotExist() {
       fielding_position VARCHAR(10),
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       UNIQUE(player_id, game_id)
-    );
-    
+    )
+  `);
+  
+  await db.execute(sql`
     CREATE TABLE IF NOT EXISTS scoring_book_images (
       id SERIAL PRIMARY KEY,
       game_id INTEGER NOT NULL REFERENCES games(id),
       image_url VARCHAR(500) NOT NULL,
       uploaded_at TIMESTAMP NOT NULL DEFAULT NOW()
-    );
+    )
   `);
 }
 
