@@ -142,7 +142,6 @@ export async function POST(request: NextRequest) {
           opponent,
           home_away,
           location,
-          notes,
           status,
           created_at,
           updated_at
@@ -153,12 +152,11 @@ export async function POST(request: NextRequest) {
           ${opponent},
           ${homeAway},
           ${location || null},
-          ${notes || null},
           'scheduled',
           NOW(),
           NOW()
         )
-        RETURNING id, season_id, game_date, opponent, home_away, location, notes, status, our_score, their_score
+        RETURNING id, season_id, game_date, opponent, home_away, location, status, our_score, their_score
       `);
 
       if (result.length === 0) {
@@ -173,7 +171,7 @@ export async function POST(request: NextRequest) {
         opponent: newGame.opponent,
         homeAway: newGame.home_away,
         location: newGame.location,
-        notes: newGame.notes,
+        notes: notes, // Use the input notes since DB doesn't store them
         status: newGame.status,
         ourScore: newGame.our_score,
         theirScore: newGame.their_score,
