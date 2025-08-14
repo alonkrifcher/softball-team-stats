@@ -48,6 +48,31 @@ export async function GET(request: NextRequest) {
       results.gameSample = gameSample;
     }
 
+    // Check for Ethan Fedida in Game 2 specifically
+    const game2Players = await db.execute(sql`
+      SELECT 
+        hp.name,
+        hpg.at_bats,
+        hpg.hits
+      FROM historical_player_games hpg
+      INNER JOIN historical_players hp ON hpg.player_id = hp.id
+      INNER JOIN historical_games hg ON hpg.game_id = hg.id
+      WHERE hg.season_year = 2025 
+      AND hg.game_number = 2
+      ORDER BY hp.name ASC
+    `);
+    results.game2Players = game2Players;
+    results.game2EthanCheck = game2Players.filter((p: any) => p.name.toLowerCase().includes('ethan'));
+
+    // Check all Ethan variations
+    const allEthans = await db.execute(sql`
+      SELECT DISTINCT hp.name
+      FROM historical_players hp
+      WHERE hp.name ILIKE '%ethan%' 
+      ORDER BY hp.name
+    `);
+    results.allEthans = allEthans;
+
     return NextResponse.json(results);
 
   } catch (error) {
