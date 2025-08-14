@@ -52,7 +52,7 @@ export default function Navigation({ user }: NavigationProps) {
   return (
     <>
       {/* Desktop Navigation */}
-      <nav className="bg-white shadow-sm border-b lg:w-64 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col">
+      <nav className="bg-white shadow-sm border-b lg:w-64 lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:flex-col lg:overflow-y-auto">
         <div className="px-6 py-4 lg:pb-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900">Team Stats</h1>

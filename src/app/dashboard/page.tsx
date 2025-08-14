@@ -147,14 +147,21 @@ export default function Dashboard() {
         <div className="card p-6">
           <h2 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <a href="/dashboard/csv-import-v2" className="btn-primary btn-md justify-start">
-              <FileText className="h-4 w-4 mr-2" />
-              Import Historical CSV
+            <a href="/dashboard/setup-current" className="btn-primary btn-md justify-start">
+              <Calendar className="h-4 w-4 mr-2" />
+              Setup Current Season
             </a>
             <a href="/stats/entry" className="btn-outline btn-md justify-start">
               <BarChart3 className="h-4 w-4 mr-2" />
-              Enter Game Stats
+              Create New Game
             </a>
+            <a href="/dashboard/csv-import-v2" className="btn-outline btn-md justify-start">
+              <FileText className="h-4 w-4 mr-2" />
+              Import Historical CSV
+            </a>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
             <a href="/roster" className="btn-outline btn-md justify-start">
               <Users className="h-4 w-4 mr-2" />
               Manage Roster
