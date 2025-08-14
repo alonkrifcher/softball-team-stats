@@ -11,7 +11,9 @@ import {
   LogOut,
   Menu,
   X,
-  Home
+  Home,
+  History,
+  Trophy
 } from 'lucide-react';
 import { User } from '@/types';
 
@@ -35,7 +37,9 @@ export default function Navigation({ user }: NavigationProps) {
 
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: Home },
-    { name: 'Stats', href: '/stats', icon: BarChart3 },
+    { name: 'Current Stats', href: '/stats', icon: BarChart3 },
+    { name: 'All-Time Stats', href: '/all-time-stats', icon: Trophy },
+    { name: 'History', href: '/history', icon: History },
     { name: 'Schedule', href: '/schedule', icon: Calendar },
     { name: 'Roster', href: '/roster', icon: Users },
   ];
