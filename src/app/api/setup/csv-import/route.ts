@@ -37,9 +37,18 @@ interface PlayerGameRow {
 }
 
 function parseCSVRow(line: string): PlayerGameRow | null {
-  const values = line.split('\t'); // Assuming tab-delimited
+  // Try tab-delimited first, then comma-delimited
+  let values = line.split('\t');
+  if (values.length < 10) {
+    values = line.split(',');
+  }
   
-  if (values.length < 20) return null;
+  console.log(`Parsing line with ${values.length} values:`, values.slice(0, 10));
+  
+  if (values.length < 20) {
+    console.log(`Skipping line - only ${values.length} values (need at least 20)`);
+    return null;
+  }
   
   try {
     return {
@@ -170,6 +179,8 @@ export async function POST(request: NextRequest) {
     const dataLines = lines.slice(1).filter((line: string) => line.trim());
     
     console.log(`📄 Processing ${dataLines.length} data rows`);
+    console.log(`Header: ${headerLine}`);
+    console.log(`Sample lines:`, dataLines.slice(0, 3));
     
     const seasons = new Set<number>();
     const players = new Map<string, { gender: string; firstYear: number; lastYear: number }>();
@@ -179,7 +190,14 @@ export async function POST(request: NextRequest) {
     // Parse all rows and collect unique data
     for (const line of dataLines) {
       const row = parseCSVRow(line);
-      if (!row || !row.Name || !row.Year) continue;
+      if (!row) {
+        console.log('Failed to parse row');
+        continue;
+      }
+      if (!row.Name || !row.Year) {
+        console.log('Row missing name or year:', row);
+        continue;
+      }
       
       seasons.add(row.Year);
       
