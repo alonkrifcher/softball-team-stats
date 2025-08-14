@@ -2,139 +2,86 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/layout/DashboardLayout';
-import { BarChart3, Calendar, Users, TrendingUp } from 'lucide-react';
-
-interface DashboardStats {
-  gamesPlayed: number;
-  teamAverage: string;
-  activePlayers: number;
-  winRate: string;
-}
-
-interface RecentGame {
-  id: number;
-  gameDate: string;
-  opponent: string;
-  homeAway: string;
-  result: string;
-  resultDisplay: string;
-}
+import { BarChart3, Calendar, Users, Trophy, History, Plus } from 'lucide-react';
+import { User } from '@/types';
 
 export default function Dashboard() {
-  const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [recentGames, setRecentGames] = useState<RecentGame[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    loadDashboardData();
+    // Get user info from the auth context in DashboardLayout
+    // This is a simplified approach since DashboardLayout already checks auth
+    fetchUser();
   }, []);
 
-  const loadDashboardData = async () => {
+  const fetchUser = async () => {
     try {
-      const [statsResponse, gamesResponse] = await Promise.all([
-        fetch('/api/dashboard/stats'),
-        fetch('/api/dashboard/recent-games')
-      ]);
-      
-      if (statsResponse.ok && gamesResponse.ok) {
-        const statsData = await statsResponse.json();
-        const gamesData = await gamesResponse.json();
-        setStats(statsData);
-        setRecentGames(gamesData.recentGames);
+      const response = await fetch('/api/auth/me');
+      if (response.ok) {
+        const data = await response.json();
+        setUser(data.user);
       }
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
-    } finally {
-      setLoading(false);
+      console.error('Failed to fetch user:', error);
     }
   };
 
+  const navigationItems = [
+    { name: 'Current Stats', href: '/stats', icon: BarChart3, description: 'View current season player statistics' },
+    { name: 'All-Time Stats', href: '/all-time-stats', icon: Trophy, description: 'Career statistics and leaders' },
+    { name: 'History', href: '/history', icon: History, description: 'Season history and past games' },
+    { name: 'Schedule', href: '/schedule', icon: Calendar, description: 'Game schedule and results' },
+    { name: 'Roster', href: '/roster', icon: Users, description: 'Team roster and player info' },
+  ];
+
+  // Add stats entry for managers/admins
+  if (user && ['admin', 'manager'].includes(user.role)) {
+    navigationItems.unshift({ 
+      name: 'Enter Game Stats', 
+      href: '/stats/entry', 
+      icon: Plus, 
+      description: 'Add statistics for new games' 
+    });
+  }
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">UHJ Homepage</h1>
-          <p className="text-gray-600">Welcome to your team stats dashboard</p>
+      <div className="min-h-screen flex flex-col items-center justify-center py-12 px-4">
+        {/* Main Title */}
+        <div className="text-center mb-12">
+          <h1 
+            className="text-6xl md:text-8xl font-bold mb-4"
+            style={{ color: '#7BAFD4' }}
+          >
+            Go Handies!
+          </h1>
+          <p className="text-xl text-gray-600">Welcome to the UHJ Baseball Team Homepage</p>
         </div>
 
-        {/* Team Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="stat-card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="stat-label">Games Played</p>
-                <p className="stat-value">{loading ? '...' : stats?.gamesPlayed || 0}</p>
-              </div>
-              <Calendar className="h-8 w-8" style={{color: '#7BAFD4'}} />
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="stat-label">Team Average</p>
-                <p className="stat-value">{loading ? '...' : stats?.teamAverage || '.000'}</p>
-              </div>
-              <TrendingUp className="h-8 w-8" style={{color: '#7BAFD4'}} />
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="stat-label">Active Players</p>
-                <p className="stat-value">{loading ? '...' : stats?.activePlayers || 0}</p>
-              </div>
-              <Users className="h-8 w-8" style={{color: '#7BAFD4'}} />
-            </div>
-          </div>
-
-          <div className="stat-card">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="stat-label">Win Rate</p>
-                <p className="stat-value">{loading ? '...' : stats?.winRate || '0%'}</p>
-              </div>
-              <BarChart3 className="h-8 w-8" style={{color: '#7BAFD4'}} />
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Games */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Games</h2>
-          <div className="space-y-3">
-            {loading ? (
-              <div className="text-center py-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 mx-auto" style={{borderColor: '#7BAFD4'}}></div>
-                <p className="text-gray-600 mt-2">Loading games...</p>
-              </div>
-            ) : recentGames.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-600">No completed games yet.</p>
-              </div>
-            ) : (
-              recentGames.map((game) => (
-                <div key={game.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                  <div>
-                    <p className="font-medium text-gray-900">vs {game.opponent}</p>
-                    <p className="text-sm text-gray-600">{new Date(game.gameDate).toLocaleDateString()}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-medium ${
-                      game.result === 'W' ? 'text-green-600' : 
-                      game.result === 'L' ? 'text-red-600' : 'text-yellow-600'
-                    }`}>
-                      {game.resultDisplay}
-                    </p>
-                    <p className="text-sm text-gray-600 capitalize">{game.homeAway}</p>
-                  </div>
+        {/* Navigation Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
+          {navigationItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <a
+                key={item.name}
+                href={item.href}
+                className="block p-6 bg-white rounded-lg border-2 border-gray-200 hover:border-[#7BAFD4] hover:shadow-lg transition-all duration-200 transform hover:-translate-y-1"
+              >
+                <div className="flex items-center mb-4">
+                  <Icon className="h-8 w-8 mr-3" style={{ color: '#7BAFD4' }} />
+                  <h2 className="text-xl font-semibold text-gray-900">{item.name}</h2>
                 </div>
-              ))
-            )}
-          </div>
+                <p className="text-gray-600">{item.description}</p>
+              </a>
+            );
+          })}
         </div>
 
+        {/* Footer */}
+        <div className="mt-12 text-center">
+          <p className="text-gray-500">Season 2025 • Go Team!</p>
+        </div>
       </div>
     </DashboardLayout>
   );
