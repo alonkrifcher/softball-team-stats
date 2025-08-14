@@ -11,13 +11,41 @@ export default function SetupPage() {
   const [credentials, setCredentials] = useState<any>(null);
   const [summary, setSummary] = useState<any>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [setupType, setSetupType] = useState<'sample' | 'import'>('sample');
+  const [setupType, setSetupType] = useState<'sample' | 'import' | 'team'>('sample');
   const router = useRouter();
 
   const runSetup = async () => {
     setStatus('running');
     
-    if (setupType === 'import') {
+    if (setupType === 'team') {
+      setMessage('Importing Underhand Jobs team data...');
+      
+      try {
+        const response = await fetch('/api/setup/team-data', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+          setStatus('success');
+          setMessage('Team data imported successfully!');
+          setCredentials(data.credentials);
+          setSummary(data.summary);
+        } else {
+          setStatus('error');
+          setMessage(data.error || 'Team data import failed');
+          console.error('Team data import error:', data);
+        }
+      } catch (error) {
+        setStatus('error');
+        setMessage('Network error during team data import');
+        console.error('Team data import error:', error);
+      }
+    } else if (setupType === 'import') {
       if (!selectedFile) {
         setStatus('error');
         setMessage('Please select an Excel file to import');
@@ -113,7 +141,7 @@ export default function SetupPage() {
               <div className="space-y-4">
                 <h2 className="text-lg font-semibold text-center">Choose Setup Method</h2>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <button
                     onClick={() => setSetupType('sample')}
                     className={`p-4 border-2 rounded-lg transition-colors ${
@@ -125,6 +153,19 @@ export default function SetupPage() {
                     <Play className="h-8 w-8 mx-auto mb-2 text-purple-600" />
                     <div className="font-semibold">Sample Data</div>
                     <div className="text-sm text-gray-600">Start with example players</div>
+                  </button>
+                  
+                  <button
+                    onClick={() => setSetupType('team')}
+                    className={`p-4 border-2 rounded-lg transition-colors ${
+                      setupType === 'team' 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <Users className="h-8 w-8 mx-auto mb-2 text-orange-600" />
+                    <div className="font-semibold">Team Data</div>
+                    <div className="text-sm text-gray-600">Underhand Jobs 2025</div>
                   </button>
                   
                   <button
@@ -141,6 +182,30 @@ export default function SetupPage() {
                   </button>
                 </div>
               </div>
+
+              {/* Team Data Setup */}
+              {setupType === 'team' && (
+                <div className="text-center">
+                  <p className="text-sm text-gray-600 mb-6">
+                    This will import your actual Underhand Jobs team data including:
+                  </p>
+                  
+                  <div className="space-y-3 text-left">
+                    <div className="flex items-center text-sm">
+                      <Users className="h-4 w-4 text-orange-600 mr-2" />
+                      24 Underhand Jobs players
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <Calendar className="h-4 w-4 text-green-600 mr-2" />
+                      2025 Spring/Summer season
+                    </div>
+                    <div className="flex items-center text-sm">
+                      <Play className="h-4 w-4 text-purple-600 mr-2" />
+                      9 games from April to August
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Sample Data Setup */}
               {setupType === 'sample' && (
@@ -210,7 +275,12 @@ export default function SetupPage() {
                 size="lg"
                 disabled={setupType === 'import' && !selectedFile}
               >
-                {setupType === 'import' ? (
+                {setupType === 'team' ? (
+                  <>
+                    <Users className="h-4 w-4 mr-2" />
+                    Import Team Data
+                  </>
+                ) : setupType === 'import' ? (
                   <>
                     <Upload className="h-4 w-4 mr-2" />
                     Import Excel Data
