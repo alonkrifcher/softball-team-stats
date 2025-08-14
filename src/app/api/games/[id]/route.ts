@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq } from 'drizzle-orm';
 import { db, games } from '@/lib/db';
-import { authenticate, checkRole } from '@/lib/auth/middleware';
+import { getAuthUser, hasRequiredRole, createAuthError } from '@/lib/auth/simple';
 
 const updateGameSchema = z.object({
   gameDate: z.string().datetime().optional(),
@@ -21,6 +21,11 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) {
+      return createAuthError('Authentication required', 401);
+    }
+
     const gameId = parseInt(params.id);
     
     const game = await db.query.games.findFirst({
@@ -51,15 +56,23 @@ export async function GET(
       { status: 500 }
     );
   }
-});
+}
 
 // PUT /api/games/[id] - Update game
-export const PUT = withRole('manager', async (
+export async function PUT(
   request: NextRequest,
-  payload: any,
   { params }: { params: { id: string } }
-) => {
+) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) {
+      return createAuthError('Authentication required', 401);
+    }
+
+    if (!hasRequiredRole(user.role, 'manager')) {
+      return createAuthError('Insufficient permissions', 403);
+    }
+
     const gameId = parseInt(params.id);
     const body = await request.json();
     const updateData = updateGameSchema.parse(body);
@@ -112,15 +125,23 @@ export const PUT = withRole('manager', async (
       { status: 500 }
     );
   }
-});
+}
 
 // DELETE /api/games/[id] - Delete game
-export const DELETE = withRole('manager', async (
+export async function DELETE(
   request: NextRequest,
-  payload: any,
   { params }: { params: { id: string } }
-) => {
+) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) {
+      return createAuthError('Authentication required', 401);
+    }
+
+    if (!hasRequiredRole(user.role, 'manager')) {
+      return createAuthError('Insufficient permissions', 403);
+    }
+
     const gameId = parseInt(params.id);
     
     const [deletedGame] = await db.delete(games)
@@ -142,4 +163,4 @@ export const DELETE = withRole('manager', async (
       { status: 500 }
     );
   }
-});
+}

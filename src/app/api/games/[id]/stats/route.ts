@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { eq, and } from 'drizzle-orm';
 import { db, playerGameStats, games, players } from '@/lib/db';
-import { withRole } from '@/lib/auth/middleware';
+import { getAuthUser, hasRequiredRole, createAuthError } from '@/lib/auth/simple';
 
 const playerStatSchema = z.object({
   playerId: z.number().int(),
@@ -33,12 +33,16 @@ const bulkStatsSchema = z.object({
 });
 
 // GET /api/games/[id]/stats - Get all stats for a game
-export const GET = withRole('player', async (
+export async function GET(
   request: NextRequest,
-  payload: any,
   { params }: { params: { id: string } }
-) => {
+) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) {
+      return createAuthError('Authentication required', 401);
+    }
+
     const gameId = parseInt(params.id);
     
     const gameStats = await db.query.playerGameStats.findMany({
@@ -57,15 +61,23 @@ export const GET = withRole('player', async (
       { status: 500 }
     );
   }
-});
+}
 
 // POST /api/games/[id]/stats - Add/update stats for multiple players in a game
-export const POST = withRole('manager', async (
+export async function POST(
   request: NextRequest,
-  payload: any,
   { params }: { params: { id: string } }
-) => {
+) {
   try {
+    const user = await getAuthUser(request);
+    if (!user) {
+      return createAuthError('Authentication required', 401);
+    }
+
+    if (!hasRequiredRole(user.role, 'manager')) {
+      return createAuthError('Insufficient permissions', 403);
+    }
+
     const gameId = parseInt(params.id);
     const body = await request.json();
     const { playerStats: statsData, gameScore } = bulkStatsSchema.parse(body);
@@ -165,4 +177,4 @@ export const POST = withRole('manager', async (
       { status: 500 }
     );
   }
-});
+}
