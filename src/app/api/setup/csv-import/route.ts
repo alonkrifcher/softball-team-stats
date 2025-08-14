@@ -37,51 +37,81 @@ interface PlayerGameRow {
 }
 
 function parseCSVRow(line: string): PlayerGameRow | null {
-  // Try tab-delimited first, then comma-delimited
-  let values = line.split('\t');
-  if (values.length < 10) {
-    values = line.split(',');
-  }
+  // Split by comma (your format is comma-delimited)
+  const values = line.split(',');
   
   console.log(`Parsing line with ${values.length} values:`, values.slice(0, 10));
   
-  if (values.length < 20) {
-    console.log(`Skipping line - only ${values.length} values (need at least 20)`);
+  // Your CSV has 29 columns based on the sample
+  if (values.length < 29) {
+    console.log(`Skipping line - only ${values.length} values (need 29)`);
     return null;
   }
   
+  // Helper function to handle empty values
+  const parseIntOrNull = (value: string) => {
+    const trimmed = (value || '').trim();
+    if (!trimmed) return null;
+    const parsed = parseInt(trimmed);
+    return isNaN(parsed) ? null : parsed;
+  };
+  
+  const parseIntOrZero = (value: string) => {
+    const trimmed = (value || '').trim();
+    if (!trimmed) return 0;
+    const parsed = parseInt(trimmed);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+  
+  const parseFloatOrZero = (value: string) => {
+    const trimmed = (value || '').trim();
+    if (!trimmed) return 0;
+    const parsed = parseFloat(trimmed);
+    return isNaN(parsed) ? 0 : parsed;
+  };
+  
   try {
-    return {
-      Year: parseInt(values[0]) || 0,
-      Game: parseInt(values[1]) || 0,
-      Date: values[2] || '',
-      Opponent: values[3] || 'Unknown',
-      Result: values[4] || '',
-      'UHJ Runs': values[5] ? parseInt(values[5]) : null,
-      'Opp Runs': values[6] ? parseInt(values[6]) : null,
-      Name: values[7] || '',
-      Gender: values[8] || '',
-      Avg: parseFloat(values[9]) || 0,
-      AB: parseInt(values[10]) || 0,
-      R: parseInt(values[11]) || 0,
-      H: parseInt(values[12]) || 0,
-      '1B': parseInt(values[13]) || 0,
-      '2B': parseInt(values[14]) || 0,
-      '3B': parseInt(values[15]) || 0,
-      HR: parseInt(values[16]) || 0,
-      XBH: parseInt(values[17]) || 0,
-      TB: parseInt(values[18]) || 0,
-      RBI: parseInt(values[19]) || 0,
-      Sac: parseInt(values[20]) || 0,
-      BB: parseInt(values[21]) || 0,
-      K: parseInt(values[22]) || 0,
-      SLG: parseFloat(values[23]) || 0,
-      OBP: parseFloat(values[24]) || 0,
-      OPS: parseFloat(values[25]) || 0,
-      EqA: parseFloat(values[26]) || 0,
-      On_base_num: parseInt(values[27]) || 0,
-      On_base_denom: parseInt(values[28]) || 0,
+    const result = {
+      Year: parseIntOrZero(values[0]),
+      Game: parseIntOrZero(values[1]),
+      Date: (values[2] || '').trim(),
+      Opponent: (values[3] || 'Unknown').trim(),
+      Result: (values[4] || '').trim(),
+      'UHJ Runs': parseIntOrNull(values[5]),
+      'Opp Runs': parseIntOrNull(values[6]),
+      Name: (values[7] || '').trim(),
+      Gender: (values[8] || '').trim(),
+      Avg: parseFloatOrZero(values[9]),
+      AB: parseIntOrZero(values[10]),
+      R: parseIntOrZero(values[11]),
+      H: parseIntOrZero(values[12]),
+      '1B': parseIntOrZero(values[13]),
+      '2B': parseIntOrZero(values[14]),
+      '3B': parseIntOrZero(values[15]),
+      HR: parseIntOrZero(values[16]),
+      XBH: parseIntOrZero(values[17]),
+      TB: parseIntOrZero(values[18]),
+      RBI: parseIntOrZero(values[19]),
+      Sac: parseIntOrZero(values[20]),
+      BB: parseIntOrZero(values[21]),
+      K: parseIntOrZero(values[22]),
+      SLG: parseFloatOrZero(values[23]),
+      OBP: parseFloatOrZero(values[24]),
+      OPS: parseFloatOrZero(values[25]),
+      EqA: parseFloatOrZero(values[26]),
+      On_base_num: parseIntOrZero(values[27]),
+      On_base_denom: parseIntOrZero(values[28]),
     };
+    
+    console.log('Parsed result:', { 
+      name: result.Name, 
+      year: result.Year, 
+      game: result.Game,
+      ab: result.AB,
+      h: result.H 
+    });
+    
+    return result;
   } catch (error) {
     console.error('Error parsing row:', line, error);
     return null;
