@@ -12,10 +12,21 @@ interface DashboardLayoutProps {
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLargeScreen, setIsLargeScreen] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     checkAuth();
+    
+    // Check screen size on mount and resize
+    const checkScreenSize = () => {
+      setIsLargeScreen(window.innerWidth >= 1024);
+    };
+    
+    checkScreenSize();
+    window.addEventListener('resize', checkScreenSize);
+    
+    return () => window.removeEventListener('resize', checkScreenSize);
   }, []);
 
   const checkAuth = async () => {
@@ -52,9 +63,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <Navigation user={user} />
       
       {/* Main content */}
-      <div className="lg:pl-64">
+      <div 
+        className={`transition-all duration-200 ${isLargeScreen ? 'pl-64' : 'pl-0'}`}
+        style={{ 
+          paddingLeft: isLargeScreen ? '16rem' : '0rem',
+          minHeight: '100vh' 
+        }}
+      >
         <main className="py-6 px-4 sm:px-6 lg:px-8">
-          {children}
+          <div className="max-w-7xl mx-auto">
+            {children}
+          </div>
         </main>
       </div>
     </div>
