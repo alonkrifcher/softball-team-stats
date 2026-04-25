@@ -4,8 +4,6 @@ import { games } from '@/lib/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import { getCurrentSeason, listSeasons } from '@/lib/seasons';
 import { GamesTable } from '@/components/GamesTable';
-import { syncSeasonIcalCached } from '@/lib/ical-sync';
-
 export const dynamic = 'force-dynamic';
 
 export default async function SchedulePage() {
@@ -18,15 +16,6 @@ export default async function SchedulePage() {
         <p>No current season set up yet.</p>
       </div>
     );
-  }
-
-  // Best-effort cached iCal sync
-  if (season.icalUrl) {
-    try {
-      await syncSeasonIcalCached(season.id, season.icalUrl);
-    } catch (e) {
-      console.error('iCal sync (cached) failed:', e);
-    }
   }
 
   const seasonGames = await db

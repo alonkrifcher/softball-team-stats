@@ -30,7 +30,14 @@ export function extractOpponent(summary: string): string | undefined {
 }
 
 export async function fetchIcal(url: string): Promise<ParsedEvent[]> {
-  const res = await fetch(url, { cache: 'no-store' });
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 8000);
+  let res: Response;
+  try {
+    res = await fetch(url, { cache: 'no-store', signal: ctrl.signal });
+  } finally {
+    clearTimeout(timer);
+  }
   if (!res.ok) throw new Error(`iCal fetch failed: ${res.status}`);
   const text = await res.text();
   const data = nodeIcal.sync.parseICS(text);
