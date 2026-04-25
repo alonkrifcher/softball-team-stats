@@ -1,0 +1,4 @@
+{
+  "_comment": "Hand-curated aliases beyond display_name. Keys are slugs; values are name strings the importer might encounter. The seed script also adds each player's display_name as an alias automatically.",
+  "_aliases": {}
+}

@@ -1,8 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  images: {
-    domains: ['localhost'],
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '12mb',
+    },
   },
-}
+  images: {
+    remotePatterns: [{ protocol: 'https', hostname: '*.supabase.co' }],
+  },
+};
 
-module.exports = nextConfig
+module.exports = nextConfig;

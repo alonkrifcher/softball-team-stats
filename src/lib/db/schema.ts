@@ -1,128 +1,159 @@
-import { pgTable, serial, varchar, text, timestamp, integer, decimal, boolean, pgEnum } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import {
+  pgTable,
+  pgEnum,
+  uuid,
+  text,
+  integer,
+  boolean,
+  timestamp,
+  date,
+  jsonb,
+  uniqueIndex,
+  index,
+  check,
+} from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 
-// Enums
-export const userRoleEnum = pgEnum('user_role', ['admin', 'manager', 'coach', 'player']);
-export const gameStatusEnum = pgEnum('game_status', ['scheduled', 'in_progress', 'completed', 'cancelled', 'postponed']);
-export const homeAwayEnum = pgEnum('home_away', ['home', 'away']);
+export const genderEnum = pgEnum('gender', ['M', 'F']);
+export const gameStatusEnum = pgEnum('game_status', ['scheduled', 'final', 'historical', 'cancelled']);
+export const gameResultEnum = pgEnum('game_result', ['W', 'L', 'T']);
+export const rsvpStatusEnum = pgEnum('rsvp_status', ['yes', 'no', 'maybe']);
+export const statSourceEnum = pgEnum('stat_source', ['xlsx', 'manual', 'ocr']);
+export const uploadStatusEnum = pgEnum('upload_status', ['pending', 'parsed', 'committed', 'rejected', 'failed']);
 
-// Users table
-export const users = pgTable('users', {
-  id: serial('id').primaryKey(),
-  email: varchar('email', { length: 255 }).notNull().unique(),
-  passwordHash: varchar('password_hash', { length: 255 }).notNull(),
-  role: userRoleEnum('role').notNull().default('player'),
-  firstName: varchar('first_name', { length: 100 }).notNull(),
-  lastName: varchar('last_name', { length: 100 }).notNull(),
-  isActive: boolean('is_active').default(true).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
-});
-
-// Seasons table
-export const seasons = pgTable('seasons', {
-  id: serial('id').primaryKey(),
-  name: varchar('name', { length: 100 }).notNull(),
-  year: integer('year').notNull(),
-  startDate: timestamp('start_date').notNull(),
-  endDate: timestamp('end_date').notNull(),
-  isActive: boolean('is_active').default(true).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-});
-
-// Players table
 export const players = pgTable('players', {
-  id: serial('id').primaryKey(),
-  userId: integer('user_id').references(() => users.id),
-  firstName: varchar('first_name', { length: 100 }).notNull(),
-  lastName: varchar('last_name', { length: 100 }).notNull(),
+  id: uuid('id').primaryKey().defaultRandom(),
+  displayName: text('display_name').notNull(),
+  slug: text('slug').notNull().unique(),
+  gender: genderEnum('gender').notNull(),
+  active: boolean('active').notNull().default(true),
   jerseyNumber: integer('jersey_number'),
-  primaryPosition: varchar('primary_position', { length: 50 }),
-  isActive: boolean('is_active').default(true).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Games table
-export const games = pgTable('games', {
-  id: serial('id').primaryKey(),
-  seasonId: integer('season_id').references(() => seasons.id).notNull(),
-  gameDate: timestamp('game_date').notNull(),
-  opponent: varchar('opponent', { length: 100 }).notNull(),
-  homeAway: homeAwayEnum('home_away').notNull(),
-  location: varchar('location', { length: 200 }),
-  ourScore: integer('our_score'),
-  theirScore: integer('their_score'),
-  status: gameStatusEnum('status').default('scheduled').notNull(),
-  calendarEventId: varchar('calendar_event_id', { length: 255 }),
-  notes: text('notes'),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+export const playerAliases = pgTable('player_aliases', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  playerId: uuid('player_id')
+    .notNull()
+    .references(() => players.id, { onDelete: 'cascade' }),
+  alias: text('alias').notNull().unique(),
 });
 
-// Player Game Stats table
-export const playerGameStats = pgTable('player_game_stats', {
-  id: serial('id').primaryKey(),
-  playerId: integer('player_id').references(() => players.id).notNull(),
-  gameId: integer('game_id').references(() => games.id).notNull(),
-  battingOrder: integer('batting_order'),
-  atBats: integer('at_bats').default(0).notNull(),
-  hits: integer('hits').default(0).notNull(),
-  runs: integer('runs').default(0).notNull(),
-  rbis: integer('rbis').default(0).notNull(),
-  walks: integer('walks').default(0).notNull(),
-  strikeouts: integer('strikeouts').default(0).notNull(),
-  singles: integer('singles').default(0).notNull(),
-  doubles: integer('doubles').default(0).notNull(),
-  triples: integer('triples').default(0).notNull(),
-  homeRuns: integer('home_runs').default(0).notNull(),
-  stolenBases: integer('stolen_bases').default(0).notNull(),
-  fieldingPosition: varchar('fielding_position', { length: 50 }),
-  errors: integer('errors').default(0).notNull(),
-  assists: integer('assists').default(0).notNull(),
-  putouts: integer('putouts').default(0).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
-  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+export const seasons = pgTable(
+  'seasons',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    year: integer('year').notNull().unique(),
+    label: text('label').notNull(),
+    icalUrl: text('ical_url'),
+    isCurrent: boolean('is_current').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    oneCurrent: uniqueIndex('seasons_one_current').on(t.isCurrent).where(sql`${t.isCurrent} = true`),
+  })
+);
+
+export const games = pgTable(
+  'games',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    seasonId: uuid('season_id')
+      .notNull()
+      .references(() => seasons.id),
+    gameNumber: integer('game_number'),
+    playedOn: date('played_on').notNull(),
+    startTime: timestamp('start_time', { withTimezone: true }),
+    location: text('location'),
+    opponent: text('opponent'),
+    uhjRuns: integer('uhj_runs'),
+    oppRuns: integer('opp_runs'),
+    result: gameResultEnum('result'),
+    status: gameStatusEnum('status').notNull().default('scheduled'),
+    notes: text('notes'),
+    icalUid: text('ical_uid').unique(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    seasonIdx: index('games_season').on(t.seasonId, t.playedOn),
+  })
+);
+
+export const battingLines = pgTable(
+  'batting_lines',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    gameId: uuid('game_id')
+      .notNull()
+      .references(() => games.id, { onDelete: 'cascade' }),
+    playerId: uuid('player_id')
+      .notNull()
+      .references(() => players.id),
+    ab: integer('ab').notNull().default(0),
+    r: integer('r').notNull().default(0),
+    h: integer('h').notNull().default(0),
+    singles: integer('singles').notNull().default(0),
+    doubles: integer('doubles').notNull().default(0),
+    triples: integer('triples').notNull().default(0),
+    hr: integer('hr').notNull().default(0),
+    rbi: integer('rbi').notNull().default(0),
+    bb: integer('bb').notNull().default(0),
+    k: integer('k').notNull().default(0),
+    sac: integer('sac').notNull().default(0),
+    source: statSourceEnum('source').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    gamePlayerUq: uniqueIndex('batting_lines_game_player').on(t.gameId, t.playerId),
+    hitsCheck: check('batting_lines_h_check', sql`${t.h} = ${t.singles} + ${t.doubles} + ${t.triples} + ${t.hr}`),
+    abCheck: check('batting_lines_ab_check', sql`${t.ab} >= ${t.h} + ${t.k}`),
+  })
+);
+
+export const rsvps = pgTable(
+  'rsvps',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    gameId: uuid('game_id')
+      .notNull()
+      .references(() => games.id, { onDelete: 'cascade' }),
+    playerId: uuid('player_id')
+      .notNull()
+      .references(() => players.id),
+    status: rsvpStatusEnum('status').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    gamePlayerUq: uniqueIndex('rsvps_game_player').on(t.gameId, t.playerId),
+  })
+);
+
+export const scoresheetUploads = pgTable('scoresheet_uploads', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  gameId: uuid('game_id').references(() => games.id, { onDelete: 'set null' }),
+  storageKey: text('storage_key').notNull(),
+  parsedJson: jsonb('parsed_json'),
+  status: uploadStatusEnum('status').notNull().default('pending'),
+  errorMessage: text('error_message'),
+  uploadedAt: timestamp('uploaded_at', { withTimezone: true }).notNull().defaultNow(),
+  committedAt: timestamp('committed_at', { withTimezone: true }),
 });
 
-// Scoring book images table (for future OCR feature)
-export const scoringBookImages = pgTable('scoring_book_images', {
-  id: serial('id').primaryKey(),
-  gameId: integer('game_id').references(() => games.id).notNull(),
-  imageUrl: varchar('image_url', { length: 500 }).notNull(),
-  isProcessed: boolean('is_processed').default(false).notNull(),
-  ocrData: text('ocr_data'),
-  uploadedBy: integer('uploaded_by').references(() => users.id).notNull(),
-  createdAt: timestamp('created_at').defaultNow().notNull(),
+export const auditLog = pgTable('audit_log', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  actor: text('actor').notNull(),
+  action: text('action').notNull(),
+  target: text('target'),
+  details: jsonb('details'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Relations
-export const usersRelations = relations(users, ({ one, many }) => ({
-  player: one(players, { fields: [users.id], references: [players.userId] }),
-  uploadedImages: many(scoringBookImages),
-}));
-
-export const seasonsRelations = relations(seasons, ({ many }) => ({
-  games: many(games),
-}));
-
-export const playersRelations = relations(players, ({ one, many }) => ({
-  user: one(users, { fields: [players.userId], references: [users.id] }),
-  gameStats: many(playerGameStats),
-}));
-
-export const gamesRelations = relations(games, ({ one, many }) => ({
-  season: one(seasons, { fields: [games.seasonId], references: [seasons.id] }),
-  playerStats: many(playerGameStats),
-  scoringBookImages: many(scoringBookImages),
-}));
-
-export const playerGameStatsRelations = relations(playerGameStats, ({ one }) => ({
-  player: one(players, { fields: [playerGameStats.playerId], references: [players.id] }),
-  game: one(games, { fields: [playerGameStats.gameId], references: [games.id] }),
-}));
-
-export const scoringBookImagesRelations = relations(scoringBookImages, ({ one }) => ({
-  game: one(games, { fields: [scoringBookImages.gameId], references: [games.id] }),
-  uploader: one(users, { fields: [scoringBookImages.uploadedBy], references: [users.id] }),
-}));
+export type Player = typeof players.$inferSelect;
+export type Season = typeof seasons.$inferSelect;
+export type Game = typeof games.$inferSelect;
+export type BattingLine = typeof battingLines.$inferSelect;
+export type Rsvp = typeof rsvps.$inferSelect;
+export type ScoresheetUpload = typeof scoresheetUploads.$inferSelect;

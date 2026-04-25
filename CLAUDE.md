@@ -1,108 +1,52 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working on the UHJ softball repo.
 
-## Development Commands
+## Canonical spec
+
+`BUILD_PLAN.md` is the source of truth for product decisions. Re-read it before any
+substantial change.
+
+## Stack at a glance
+
+- Next.js 15 (App Router, React 19, TypeScript)
+- Drizzle ORM + Postgres (Supabase). Aggregates live in SQL views (`migrations/9001_views.sql`).
+- iron-session cookies: `uhj_player` (90d) and `uhj_admin` (30d). No accounts; team passphrase + roster pick.
+- Anthropic Claude Sonnet for scoresheet OCR, with prompt caching on the roster block.
+- Supabase Storage for scoresheet photos.
+- TeamSideline iCal feed for current-season schedule, parsed via `node-ical`.
+
+## Commands
 
 ```bash
-# Install dependencies
-npm install
-
-# Start development server
-npm run dev
-
-# Build for production
-npm run build
-
-# Start production server
-npm start
-
-# Type checking
+npm run dev                  # local server (requires .env.local)
 npm run type-check
-
-# Lint code
-npm run lint
-
-# Database operations
-npm run db:generate    # Generate migrations from schema changes
-npm run db:migrate     # Run pending migrations
-npm run db:studio      # Open Drizzle Studio for database inspection
+npm run db:generate          # regen migrations from src/lib/db/schema.ts
+npm run db:migrate           # apply Drizzle migrations + 9xxx_*.sql views
+npm run seed:roster
+npm run import:historical    # idempotent
+npm run validate:historical
+npm run hash:password -- 'pwd'
 ```
 
-## Architecture Overview
+## Code map
 
-This is a Next.js full-stack softball team management application with the following key components:
+- `src/app/` — App Router pages. Public + `/admin/*`. Server actions live in `src/app/_actions/`.
+- `src/components/` — React components.
+- `src/lib/db/` — Drizzle schema, client, migrate runner.
+- `src/lib/auth/` — iron-session + guards (`getPlayer`, `requirePlayer`, `getAdmin`, `requireAdmin`).
+- `src/lib/ocr.ts` — Anthropic vision tool-use wrapper + Zod schema.
+- `src/lib/storage.ts` — Supabase Storage helpers.
+- `src/lib/ical*.ts` — iCal parse + sync (with `unstable_cache` 10-min TTL).
+- `migrations/` — `0000_init.sql` (Drizzle) + `9001_views.sql` (manual views).
+- `scripts/` — xlsx → CSVs, seed roster, import historical, validate, password hash.
+- `data/` — checked-in CSVs (`player_list.csv`, `game_data.csv`, `player_data.csv`, `season_<year>.csv`) and `aliases.json`.
 
-### Tech Stack
-- **Frontend**: Next.js 14 with React, TypeScript, Tailwind CSS
-- **Backend**: Next.js API routes
-- **Database**: PostgreSQL with Drizzle ORM
-- **Authentication**: JWT with HTTP-only cookies
-- **Calendar Integration**: Google Calendar API
+## House rules
 
-### Directory Structure
-```
-src/
-├── app/                    # Next.js app router pages and API routes
-│   ├── api/               # Backend API endpoints
-│   ├── dashboard/         # Main dashboard page
-│   └── (other pages)/     # Stats, roster, schedule pages
-├── components/            # React components
-│   ├── layout/           # Navigation and layout components
-│   ├── forms/            # Form components
-│   └── ui/               # Reusable UI components
-├── lib/                  # Utility libraries
-│   ├── db/               # Database schema and connection
-│   ├── auth/             # Authentication utilities
-│   └── utils/            # Helper functions
-└── types/                # TypeScript type definitions
-```
-
-### Database Schema
-- **users**: Authentication and user management
-- **players**: Player roster information
-- **seasons**: Season organization
-- **games**: Game schedule and results
-- **player_game_stats**: Individual game statistics
-- **scoring_book_images**: For future OCR feature
-
-### User Roles & Permissions
-- **Admin**: Full system access, user management
-- **Manager**: Stats entry, roster management, game management
-- **Coach**: Read-only access to all stats and schedules
-- **Player**: View own stats and team information
-
-## Development Workflow
-
-### Setting up the database
-1. Set up PostgreSQL database
-2. Copy `.env.example` to `.env` and configure DATABASE_URL
-3. Run `npm run db:generate` to create initial migrations
-4. Run `npm run db:migrate` to apply migrations
-
-### Adding new features
-1. Update database schema in `src/lib/db/schema.ts` if needed
-2. Generate and run migrations
-3. Add API routes in `src/app/api/`
-4. Create React components in `src/components/`
-5. Add pages in `src/app/`
-
-### Authentication Flow
-- JWT tokens stored in HTTP-only cookies
-- Middleware protection for authenticated routes
-- Role-based access control throughout the application
-
-## Key Features Being Built
-1. ✅ User authentication with role-based permissions
-2. ⏳ Player roster management
-3. ⏳ Manual statistics entry
-4. ⏳ Statistics viewing and analytics
-5. ⏳ Google Calendar schedule integration
-6. 🔄 Scoring book image processing (OCR - future feature)
-
-## Environment Variables Required
-- `DATABASE_URL`: PostgreSQL connection string
-- `JWT_SECRET`: Secret for JWT token signing
-- `GOOGLE_CLIENT_ID`: For Google Calendar integration
-- `GOOGLE_CLIENT_SECRET`: For Google Calendar integration
-- `GOOGLE_CALENDAR_ID`: Team calendar ID
+- Aggregates: `v_player_season_stats`, `v_player_career_stats`, `v_team_season_record`. Don't
+  duplicate the formulas in app code.
+- Importer is idempotent and fails loud on unmatched names → writes `data/unmatched.csv`.
+- New player aliases: edit `data/aliases.json` and re-run `npm run seed:roster`.
+- All times stored UTC; render `America/New_York` via `src/lib/format.ts`.
+- Don't reintroduce the old User / role tables — auth is just two cookies.

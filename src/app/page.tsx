@@ -1,63 +1,46 @@
-'use client';
+import { db } from '@/lib/db';
+import { games } from '@/lib/db/schema';
+import { and, asc, eq, gte } from 'drizzle-orm';
+import { getCurrentSeason } from '@/lib/seasons';
+import { teamRecord } from '@/lib/queries';
+import { RecordCard } from '@/components/RecordCard';
+import { NextGameCard } from '@/components/NextGameCard';
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import LoginForm from '@/components/forms/LoginForm';
-import { User } from '@/types';
+export const dynamic = 'force-dynamic';
 
-export default function Home() {
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+export default async function HomePage() {
+  const season = await getCurrentSeason();
+  const today = new Date().toISOString().slice(0, 10);
 
-  useEffect(() => {
-    checkAuth();
-  }, []);
-
-  const checkAuth = async () => {
-    try {
-      const response = await fetch('/api/auth/me');
-      if (response.ok) {
-        const data = await response.json();
-        setUser(data.user);
-        router.push('/dashboard');
-      }
-    } catch (error) {
-      console.error('Auth check failed:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  if (user) {
-    return null; // Will redirect to dashboard
+  let next = null;
+  let record = null;
+  if (season) {
+    const upcoming = await db
+      .select()
+      .from(games)
+      .where(and(eq(games.seasonId, season.id), gte(games.playedOn, today), eq(games.status, 'scheduled')))
+      .orderBy(asc(games.playedOn))
+      .limit(1);
+    next = upcoming[0] ?? null;
+    record = await teamRecord(season.id);
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Team Stats</h1>
-          <p className="text-gray-600">
-            Track your softball team statistics, schedule, and more
-          </p>
-        </div>
-        
-        <div className="card p-8">
-          <LoginForm onSuccess={() => router.push('/dashboard')} />
-        </div>
-        
-        <div className="text-center text-sm text-gray-500">
-          <p>Need an account? Contact your team manager or admin.</p>
-        </div>
+    <div className="space-y-6">
+      <header>
+        <h1 className="text-2xl font-bold text-team">Underhand Jobs</h1>
+        <p className="text-slate-600">{season?.label ?? 'No active season'}</p>
+      </header>
+      <div className="grid gap-4 md:grid-cols-2">
+        <RecordCard
+          label={`${season?.label ?? 'Current'} record`}
+          wins={record?.wins ?? 0}
+          losses={record?.losses ?? 0}
+          ties={record?.ties ?? 0}
+          runsFor={record?.runs_for ?? 0}
+          runsAgainst={record?.runs_against ?? 0}
+        />
+        <NextGameCard game={next} />
       </div>
     </div>
   );
