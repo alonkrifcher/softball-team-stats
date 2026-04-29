@@ -13,9 +13,13 @@ const TEAM_NAMES = ['underhand jobs', 'uhj'];
 
 export function extractOpponent(summary: string): string | undefined {
   if (!summary) return undefined;
-  // TeamSideline format: "<League> - <Home Team> vs <Away Team>"
   let s = summary.trim();
-  // Drop league prefix before " - "
+
+  // TeamSideline current format: " Vs <Opponent> (<Our Team>)"
+  const m = s.match(/^Vs\s+(.+?)\s*\([^)]*\)\s*$/i);
+  if (m) return m[1].trim();
+
+  // Fallback: "<League> - <Home> vs <Away>" or "<Home> vs <Away>"
   const dashIdx = s.indexOf(' - ');
   if (dashIdx !== -1) s = s.slice(dashIdx + 3).trim();
   const parts = s.split(/\s+vs\.?\s+/i);
@@ -26,7 +30,19 @@ export function extractOpponent(summary: string): string | undefined {
   const bIsUs = TEAM_NAMES.some((n) => b.toLowerCase().includes(n));
   if (aIsUs && !bIsUs) return b;
   if (bIsUs && !aIsUs) return a;
-  return b; // fallback: assume "home vs away" with us as home
+  return b;
+}
+
+// "Midtown and General - CP North Meadow 07, 96th Street & ..."
+// → "CP North Meadow 07, 96th Street & ..."
+export function cleanLocation(loc?: string): string | undefined {
+  if (!loc) return undefined;
+  const trimmed = loc.trim();
+  const dash = trimmed.indexOf(' - ');
+  if (dash !== -1 && dash < 40) {
+    return trimmed.slice(dash + 3).trim();
+  }
+  return trimmed;
 }
 
 export async function fetchIcal(url: string): Promise<ParsedEvent[]> {
@@ -54,7 +70,7 @@ export async function fetchIcal(url: string): Promise<ParsedEvent[]> {
       summary,
       start,
       end: v.end as Date | undefined,
-      location: v.location?.toString(),
+      location: cleanLocation(v.location?.toString()),
       opponent: extractOpponent(summary),
     });
   }

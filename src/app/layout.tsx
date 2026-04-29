@@ -41,11 +41,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               {admin ? (
                 <Link
                   href="/admin"
-                  className="rounded bg-team-accent px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-team-dark hover:brightness-110"
+                  className="rounded bg-team-accent px-3 py-1.5 text-xs font-bold uppercase tracking-wide text-team-deep hover:brightness-110"
                 >
                   Admin
                 </Link>
-              ) : null}
+              ) : (
+                <Link
+                  href="/admin/login"
+                  className="rounded border border-slate-300 px-3 py-1.5 text-xs font-medium text-slate-500 hover:border-team hover:text-team"
+                  title="Admin login"
+                >
+                  Admin
+                </Link>
+              )}
               {player ? (
                 <span className="text-xs text-slate-600">
                   <span className="font-medium text-slate-800">{player.displayName}</span>
