@@ -8,3 +8,4 @@ node_modules/
 data/unmatched.csv
 .vercel
 *.log
+.env.vercel
