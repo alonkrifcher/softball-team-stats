@@ -41,7 +41,7 @@ export default async function HomePage() {
   return (
     <div className="space-y-8">
       {/* Hero */}
-      <section className="overflow-hidden rounded-xl bg-gradient-to-br from-team via-team to-team-dark text-white shadow-lg">
+      <section className="overflow-hidden rounded-xl bg-gradient-to-br from-team via-team-dark to-team-deep text-white shadow-lg">
         <div className="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-xs uppercase tracking-widest opacity-70">{season?.label ?? 'Underhand Jobs'}</div>

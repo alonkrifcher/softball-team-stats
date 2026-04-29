@@ -5,10 +5,11 @@ module.exports = {
     extend: {
       colors: {
         team: {
-          DEFAULT: '#0f4c81',
-          light: '#3b7bb6',
-          dark: '#08315a',
-          accent: '#f4b400',
+          DEFAULT: '#4B9CD3',
+          light: '#7CB8DD',
+          dark: '#2A7AB8',
+          deep: '#1A5A8C',
+          accent: '#F4B400',
         },
       },
       fontFamily: {

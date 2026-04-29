@@ -48,7 +48,7 @@ export default async function AdminPage() {
 
   return (
     <div className="space-y-8">
-      <div className="rounded-lg border border-team-light/30 bg-gradient-to-br from-team to-team-dark p-6 text-white">
+      <div className="rounded-lg border border-team-light/30 bg-gradient-to-br from-team via-team-dark to-team-deep p-6 text-white">
         <div className="text-xs uppercase tracking-widest opacity-70">Admin</div>
         <h1 className="mt-1 text-2xl font-bold">{season?.label ?? 'No season set'}</h1>
         <p className="mt-1 text-sm opacity-80">

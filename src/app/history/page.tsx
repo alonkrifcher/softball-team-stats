@@ -25,7 +25,7 @@ export default async function HistoryPage() {
               href={`/history/${s.year}`}
               className="group overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm hover:border-team"
             >
-              <div className="bg-gradient-to-br from-team to-team-dark px-4 py-3 text-white">
+              <div className="bg-gradient-to-br from-team-dark to-team-deep px-4 py-3 text-white">
                 <div className="text-xs uppercase tracking-widest opacity-80">{s.label}</div>
                 <div className="text-2xl font-bold">{s.year}</div>
               </div>

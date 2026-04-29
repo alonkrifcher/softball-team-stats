@@ -62,7 +62,7 @@ export default async function GameDetailPage({ params }: { params: Promise<{ gam
     <div className="space-y-6">
       {/* Score header — ESPN style */}
       <section className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
-        <div className="bg-gradient-to-r from-team to-team-dark px-5 py-3 text-xs font-bold uppercase tracking-widest text-white/90">
+        <div className="bg-gradient-to-r from-team-dark to-team-deep px-5 py-3 text-xs font-bold uppercase tracking-widest text-white/90">
           {fmtDate(game.playedOn)}
           {game.startTime ? ` · ${fmtTime(game.startTime as unknown as string)}` : ''}
           {game.location ? ` · ${game.location}` : ''}
