@@ -215,6 +215,23 @@ export async function addAlias(playerId: string, alias: string) {
   revalidatePath('/admin/players');
 }
 
+export async function setPlayerActive(playerId: string, active: boolean) {
+  await requireAdmin();
+  await db.update(players).set({ active, updatedAt: new Date() }).where(eq(players.id, playerId));
+  revalidatePath('/admin/players');
+  revalidatePath('/roster');
+}
+
+export async function bulkSetPlayerActive(playerIds: string[], active: boolean) {
+  await requireAdmin();
+  if (!playerIds.length) return;
+  for (const id of playerIds) {
+    await db.update(players).set({ active, updatedAt: new Date() }).where(eq(players.id, id));
+  }
+  revalidatePath('/admin/players');
+  revalidatePath('/roster');
+}
+
 export async function syncSeason(seasonId: string) {
   await requireAdmin();
   const s = await db.select().from(seasons).where(eq(seasons.id, seasonId)).limit(1);

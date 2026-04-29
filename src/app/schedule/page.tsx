@@ -3,7 +3,8 @@ import { db } from '@/lib/db';
 import { games } from '@/lib/db/schema';
 import { asc, eq } from 'drizzle-orm';
 import { getCurrentSeason, listSeasons } from '@/lib/seasons';
-import { GamesTable } from '@/components/GamesTable';
+import { ScheduleList } from '@/components/ScheduleList';
+
 export const dynamic = 'force-dynamic';
 
 export default async function SchedulePage() {
@@ -25,20 +26,39 @@ export default async function SchedulePage() {
     .orderBy(asc(games.playedOn));
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">{season.label} schedule</h1>
-        <div className="flex gap-3 text-sm">
+    <div className="space-y-6">
+      <header className="flex items-baseline justify-between">
+        <div>
+          <div className="text-xs font-bold uppercase tracking-widest text-slate-500">Schedule</div>
+          <h1 className="text-2xl font-bold">{season.label}</h1>
+        </div>
+        <div className="flex flex-wrap gap-2 text-sm">
           {seasons
             .filter((s) => s.year !== season.year)
             .map((s) => (
-              <Link key={s.id} href={`/history/${s.year}`} className="text-team hover:underline">
+              <Link
+                key={s.id}
+                href={`/history/${s.year}`}
+                className="rounded border border-slate-300 px-2 py-1 text-slate-600 hover:border-team hover:text-team"
+              >
                 {s.year}
               </Link>
             ))}
         </div>
-      </div>
-      <GamesTable games={seasonGames} />
+      </header>
+      <ScheduleList
+        games={seasonGames.map((g) => ({
+          id: g.id,
+          playedOn: g.playedOn,
+          startTime: g.startTime instanceof Date ? g.startTime.toISOString() : (g.startTime as string | null),
+          opponent: g.opponent,
+          uhjRuns: g.uhjRuns,
+          oppRuns: g.oppRuns,
+          result: g.result,
+          status: g.status,
+          location: g.location,
+        }))}
+      />
     </div>
   );
 }

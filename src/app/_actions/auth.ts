@@ -65,8 +65,10 @@ export async function loginAdmin(formData: FormData) {
   if (tries > 5) redirect('/admin/login?error=throttled');
 
   const hash = process.env.ADMIN_PASSWORD_HASH;
+  console.log('[admin login] hash_len=', hash?.length, 'hash_starts=', hash?.slice(0, 10));
   if (!hash) throw new Error('ADMIN_PASSWORD_HASH not set');
   const ok = bcrypt.compareSync(args.password, hash);
+  console.log('[admin login] match=', ok, 'pwd_len=', args.password.length);
   if (!ok) redirect('/admin/login?error=bad-password');
 
   const sess = await getAdminSession();

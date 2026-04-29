@@ -14,13 +14,6 @@ textarea {
   font-size: 16px; /* prevent iOS zoom */
 }
 
-table th {
-  position: sticky;
-  top: 0;
-  background: white;
-  z-index: 1;
-}
-
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center rounded-md border border-transparent bg-team px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-team-dark disabled:opacity-50 min-h-[44px];

@@ -22,16 +22,22 @@ export function RsvpControl({ gameId, initial }: { gameId: string; initial: Stat
     });
   }
 
-  function btn(s: Status, label: string, color: string) {
+  function btn(s: Status, label: string, color: string, hint: string) {
     const active = cur === s;
     return (
       <button
         type="button"
         onClick={() => pick(s)}
         disabled={pending}
-        className={`min-h-[56px] flex-1 rounded-md border px-4 py-2 font-medium ${active ? color + ' text-white' : 'bg-white text-slate-700 border-slate-300'} disabled:opacity-50`}
+        aria-pressed={active}
+        className={
+          'group flex min-h-[60px] flex-1 flex-col items-center justify-center rounded-lg border-2 px-4 py-2 font-bold transition ' +
+          (active ? color + ' text-white shadow-md' : 'bg-white text-slate-700 border-slate-200 hover:border-slate-400') +
+          ' disabled:opacity-50'
+        }
       >
-        {label}
+        <span className="text-base">{label}</span>
+        <span className={'text-[10px] uppercase tracking-wide ' + (active ? 'opacity-80' : 'text-slate-400')}>{hint}</span>
       </button>
     );
   }
@@ -39,9 +45,9 @@ export function RsvpControl({ gameId, initial }: { gameId: string; initial: Stat
   return (
     <div className="space-y-2">
       <div className="flex gap-2">
-        {btn('yes', 'Yes', 'bg-green-600 border-green-600')}
-        {btn('maybe', 'Maybe', 'bg-amber-500 border-amber-500')}
-        {btn('no', 'No', 'bg-slate-600 border-slate-600')}
+        {btn('yes', 'In', 'bg-green-600 border-green-700', "I'll be there")}
+        {btn('maybe', 'Maybe', 'bg-amber-500 border-amber-600', 'Trying to make it')}
+        {btn('no', 'Out', 'bg-slate-600 border-slate-700', "Can't make it")}
       </div>
       {err ? <div className="text-sm text-red-600">{err}</div> : null}
     </div>
