@@ -1,10 +1,12 @@
 import 'server-only';
 import { db } from '@/lib/db';
 import { games } from '@/lib/db/schema';
-import { and, eq, inArray } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { fetchIcal } from '@/lib/ical';
 import { logAudit } from '@/lib/audit';
 import { unstable_cache } from 'next/cache';
+import { formatInTimeZone } from 'date-fns-tz';
+import { TZ } from '@/lib/format';
 
 export async function syncSeasonIcal(seasonId: string, icalUrl: string) {
   const events = await fetchIcal(icalUrl);
@@ -15,7 +17,9 @@ export async function syncSeasonIcal(seasonId: string, icalUrl: string) {
 
   for (const ev of events) {
     seenUids.push(ev.uid);
-    const dateStr = ev.start.toISOString().slice(0, 10);
+    // Compute played_on in the team's tz so late-evening games don't roll
+    // to the next UTC day.
+    const dateStr = formatInTimeZone(ev.start, TZ, 'yyyy-MM-dd');
     const existing = await db.select().from(games).where(eq(games.icalUid, ev.uid)).limit(1);
     if (existing.length) {
       if (existing[0].status === 'scheduled') {
